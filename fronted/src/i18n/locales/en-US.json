@@ -1,0 +1,22 @@
+{
+  "appName": "Leangoo Scrum",
+  "workspace": "Workspace",
+  "myBoards": "My Boards",
+  "myMindmaps": "My Mindmaps",
+  "projects": "Projects",
+  "newProject": "New Project",
+  "login": "Login",
+  "register": "Register",
+  "logout": "Logout",
+  "recentTasks": "Recent Tasks",
+  "starredBoards": "Starred Boards",
+  "recentVisits": "Recent Visits",
+  "activityFeed": "Activity",
+  "sprintPlan": "Sprint Planning",
+  "milestonePlan": "Milestone Planning",
+  "burndown": "Burndown",
+  "timeline": "Timeline",
+  "chartBoard": "Charts",
+  "settings": "Settings",
+  "language": "Language"
+}

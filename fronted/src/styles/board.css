@@ -1,0 +1,128 @@
+.board-canvas {
+  background: var(--color-bg-board);
+  min-height: calc(100vh - var(--header-height) - 120px);
+  overflow-x: auto;
+  padding: 16px;
+}
+
+.board-grid {
+  display: flex;
+  gap: 12px;
+  min-width: min-content;
+}
+
+.board-column {
+  width: var(--column-width);
+  flex-shrink: 0;
+  background: var(--color-bg-column);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  min-height: 200px;
+}
+
+.board-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px;
+  font-weight: 600;
+  font-size: 14px;
+  position: sticky;
+  top: 0;
+  background: var(--color-bg-column);
+  z-index: 1;
+}
+
+.board-column-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 80px;
+}
+
+.board-column-body--drop-active {
+  outline: 2px dashed var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: rgba(22, 119, 255, 0.05);
+}
+
+.board-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 12px;
+  cursor: grab;
+  border-left: 4px solid var(--color-primary);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.board-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.board-card--dragging {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0.9;
+}
+
+.board-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.board-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.board-card--overdue {
+  border-left-color: var(--color-danger);
+}
+
+.board-swimlane-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.board-swimlane-label {
+  width: 120px;
+  flex-shrink: 0;
+  padding: 12px 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: flex-start;
+}
+
+.board-empty-drop {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.board-grid-card {
+  width: 300px;
+  height: 120px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  padding: 16px;
+  cursor: pointer;
+  background: white;
+  transition: box-shadow 0.2s;
+}
+
+.board-grid-card:hover {
+  box-shadow: var(--shadow-card);
+}

@@ -1,0 +1,22 @@
+{
+  "appName": "领歌 Scrum",
+  "workspace": "工作台",
+  "myBoards": "个人看板",
+  "myMindmaps": "个人脑图",
+  "projects": "项目",
+  "newProject": "新建项目",
+  "login": "登录",
+  "register": "注册",
+  "logout": "退出登录",
+  "recentTasks": "近期事项",
+  "starredBoards": "星标看板",
+  "recentVisits": "最近访问",
+  "activityFeed": "卡片动态",
+  "sprintPlan": "Sprint 规划",
+  "milestonePlan": "里程碑规划",
+  "burndown": "燃尽图",
+  "timeline": "时间线",
+  "chartBoard": "图表板",
+  "settings": "设置",
+  "language": "语言"
+}

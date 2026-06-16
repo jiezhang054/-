@@ -6,11 +6,13 @@
 
 ### 前端
 ```bash
-cd frontend
+cd fronted
 npm install
 npm run dev
 ```
 访问 http://localhost:5173 ，演示账号 `zhong` / `123456`
+
+> 本地开发目录为 `frontend/`，远程仓库以 `fronted/` 为准。
 
 ### 后端
 ```bash
@@ -18,6 +20,8 @@ cd backend
 mvn spring-boot:run
 ```
 API: http://localhost:8080/api
+
+> 后端代码暂未上传至远程仓库。
 
 ## 功能
 
