@@ -1,0 +1,21 @@
+# 后端暂不提交
+backend/
+
+# 本地开发目录（远程以 fronted/ 为准）
+frontend/
+
+# 依赖与构建产物
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# 日志
+logs/
+*.log
+
+# 编辑器
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
