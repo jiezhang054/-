@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scrum管理软件——详细项目模块与功能点表格</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f5f7fa;
+            color: #1e293b;
+            padding: 30px 20px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0f172a;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 12px;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .subtitle span {
+            background: #eef2f6;
+            padding: 2px 12px;
+            border-radius: 20px;
+        }
+        .module-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 30px 0 12px 0;
+            background: #f1f5f9;
+            padding: 8px 16px;
+            border-left: 6px solid #3b82f6;
+            border-radius: 0 6px 6px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        th {
+            background: #1e293b;
+            color: #f8fafc;
+            font-weight: 600;
+            text-align: left;
+            padding: 10px 12px;
+            border: 1px solid #334155;
+            white-space: nowrap;
+        }
+        td {
+            padding: 8px 12px;
+            border: 1px solid #d1d9e6;
+            vertical-align: top;
+            background: #ffffff;
+        }
+        tr:nth-child(even) td {
+            background: #fafcfd;
+        }
+        .priority-P0 {
+            background: #dbeafe;
+            font-weight: 600;
+            color: #1d4ed8;
+        }
+        .priority-P1 {
+            background: #fef3c7;
+            font-weight: 600;
+            color: #b45309;
+        }
+        .priority-P2 {
+            background: #e0e7ff;
+            font-weight: 600;
+            color: #4338ca;
+        }
+        .priority-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .badge-P0 {
+            background: #1d4ed8;
+            color: white;
+        }
+        .badge-P1 {
+            background: #d97706;
+            color: white;
+        }
+        .badge-P2 {
+            background: #7c3aed;
+            color: white;
+        }
+        .summary-table {
+            margin-top: 30px;
+            max-width: 500px;
+        }
+        .summary-table th {
+            background: #0f172a;
+        }
+        .footer {
+            margin-top: 40px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+            font-size: 13px;
+            color: #64748b;
+            text-align: center;
+        }
+        @media print {
+            body { background: white; padding: 10px; }
+            .container { box-shadow: none; padding: 20px; }
+            th { background: #1e293b !important; color: white !important; }
+            .module-title { background: #f1f5f9 !important; }
+        }
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            table { font-size: 11px; }
+            th, td { padding: 4px 6px; }
+            .module-title { font-size: 17px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <h1>Scrum管理软件——详细项目模块与功能点表格</h1>
+    <div class="subtitle">
+        <span>📄 版本 1.0</span>
+        <span>📅 2026年6月15日</span>
+        <span>👥 开发团队：张茗杰、殷浩然、钟礼豪、臧传杨</span>
+    </div>
+
+    <!-- ==================== 模块一 ==================== -->
+    <div class="module-title">📌 模块一：全局通用功能</div>
+    <table>
+        <thead>
+            <tr><th>序号</th><th>子模块</th><th>功能点</th><th>详细描述</th><th>优先级</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>1.1</td><td>左侧导航</td><td>工作台入口</td><td>点击进入工作台视图（首页），展示近期事项、星标看板、最近访问、卡片动态</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>1.2</td><td>左侧导航</td><td>我的展开菜单</td><td>点击"我的"展开子菜单，包含"个人看板"、"个人脑图"两个入口</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>1.3</td><td>左侧导航</td><td>项目列表</td><td>显示当前用户参与的所有项目列表，按最近访问排序</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>1.4</td><td>左侧导航</td><td>新建项目</td><td>底部提供"+新建项目"按钮，弹窗填写项目名称、描述、模板类型（Scrum/轻量）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>1.5</td><td>左侧导航</td><td>学习资源（可选）</td><td>放置帮助文档、教程链接入口</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+            <tr><td>1.6</td><td>右上角全局</td><td>快捷创建看板</td><td>点击弹出新建看板对话框，支持自定义模板/标准模板，填写名称、所属项目</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>1.7</td><td>右上角全局</td><td>快捷创建脑图</td><td>点击弹出新建脑图对话框，填写名称、所属项目，支持导入外部文件</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>1.8</td><td>右上角全局</td><td>回到首页</td><td>点击返回工作台视图，任何页面均可一键回到首页</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>1.9</td><td>右上角全局</td><td>看板导航</td><td>弹窗支持搜索看板、最近访问列表、全部看板树（按项目分组）、查看已归档看板/项目</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>1.10</td><td>右上角全局</td><td>个人菜单</td><td>下拉包含：个人中心、设置背景、快捷键、更改语言、帮助、意见反馈、更新日志、官网、退出</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>1.11</td><td>右上角全局</td><td>通知信息框</td><td>展示与用户相关的动态（卡片指派、成员变更、@提醒等），按时间倒序，未读红点显示数量，支持跳转，底部"查看更多"</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>1.12</td><td>右上角全局</td><td>单条通知已读</td><td>点击单条通知后标记为已读，红点数量同步减少</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>1.13</td><td>右上角全局</td><td>全部已读</td><td>通知列表顶部提供"全部已读"按钮，一键清除所有未读状态</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>1.14</td><td>国际化</td><td>中文/英文切换</td><td>界面语言支持中英文切换，保存用户偏好到后端</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== 模块二 ==================== -->
+    <div class="module-title">📌 模块二：用户认证与个人设置</div>
+    <table>
+        <thead>
+            <tr><th>序号</th><th>子模块</th><th>功能点</th><th>详细描述</th><th>优先级</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>2.1</td><td>认证</td><td>用户注册</td><td>填写用户名、邮箱、密码完成注册，密码加密存储（BCrypt）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>2.2</td><td>认证</td><td>用户登录</td><td>用户名/邮箱+密码登录，颁发JWT Token</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>2.3</td><td>认证</td><td>Token过期处理</td><td>Token过期时自动跳转登录页，刷新Token机制</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>2.4</td><td>认证</td><td>路由守卫</td><td>未登录用户无法访问任何受保护页面，重定向到登录页</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>2.5</td><td>个人设置</td><td>个人资料修改</td><td>修改昵称、邮箱、头像上传（支持图片裁剪）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>2.6</td><td>个人设置</td><td>密码修改</td><td>输入旧密码+新密码+确认新密码，修改登录密码</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>2.7</td><td>个人设置</td><td>界面背景设置</td><td>支持选择预设背景图或上传自定义背景，保存到用户配置</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>2.8</td><td>个人设置</td><td>语言偏好</td><td>选择界面语言（中文/英文），保存到用户配置</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+            <tr><td>2.9</td><td>演示</td><td>演示账号及种子数据</td><td>提供预置演示账号和示例数据（示例项目、看板、卡片），方便课程演示</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== 模块三 ==================== -->
+    <div class="module-title">📌 模块三：工作台（首页）</div>
+    <table>
+        <thead>
+            <tr><th>序号</th><th>子模块</th><th>功能点</th><th>详细描述</th><th>优先级</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>3.1</td><td>近期事项</td><td>未完成卡片列表</td><td>展示当前用户作为成员且状态为"未完成"的卡片，显示卡片名称、所在列表、起止时间、成员、所属冲刺/项目</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.2</td><td>近期事项</td><td>跳转卡片详情</td><td>点击卡片名称进入卡片详情页或所在看板</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.3</td><td>近期事项</td><td>快速变更状态</td><td>支持在下拉菜单中快速将卡片移动到其他列表（如从"进行中"移至"已完成"）</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>3.4</td><td>近期事项</td><td>按截止时间排序</td><td>默认按截止时间从近到远排序，紧急任务优先展示</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.5</td><td>近期事项</td><td>空状态提示</td><td>无未完成任务时显示"暂无未完成任务，快去项目看板中添加吧"</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.6</td><td>星标看板</td><td>星标看板列表</td><td>展示用户全局标星的所有看板（不限项目），显示看板名称、所属项目</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.7</td><td>星标看板</td><td>跳转看板</td><td>点击看板名称在当前页打开看板详情</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.8</td><td>星标看板</td><td>取消星标</td><td>右键或菜单中取消星标，看板从星标列表中移除但保留在原有位置</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.9</td><td>星标看板</td><td>新标签页打开</td><td>右键菜单选择"在新标签页打开"，通过独立URL访问看板</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>3.10</td><td>星标看板</td><td>归档星标看板</td><td>右键菜单可归档看板，归档后从星标列表移除，可在已归档中恢复</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>3.11</td><td>星标看板</td><td>空状态提示</td><td>无星标看板时显示"暂无星标看板，去看板列表中点击☆标星"</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.12</td><td>最近访问</td><td>访问记录列表</td><td>按时间倒序记录用户访问过的看板/脑图/项目（最多50条），显示图标+名称</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.13</td><td>最近访问</td><td>跳转访问记录</td><td>点击条目直接跳转到对应看板/脑图/项目详情页</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.14</td><td>最近访问</td><td>移除单条记录</td><td>右键或菜单中移除该条访问记录，两侧（工作台+左侧边栏）同步移除</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>3.15</td><td>最近访问</td><td>新标签页打开</td><td>右键菜单选择"在新标签页打开"</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>3.16</td><td>最近访问</td><td>空状态提示</td><td>无最近访问时显示"暂无最近访问"</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.17</td><td>卡片动态</td><td>动态列表展示</td><td>展示与用户相关的卡片操作日志（移动、新建、编辑、成员变更等），每条含操作人头像/昵称、操作描述、卡片名、时间</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.18</td><td>卡片动态</td><td>时间倒序</td><td>严格按时间倒序排列，最新动态靠上</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.19</td><td>卡片动态</td><td>点击跳转</td><td>点击动态中的卡片名称跳转到对应卡片详情或看板位置</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.20</td><td>卡片动态</td><td>分页加载</td><td>支持滚动加载更多动态，或底部提供"查看更多"链接</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>3.21</td><td>卡片动态</td><td>空状态提示</td><td>无动态时显示"暂无动态"</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.22</td><td>辅助功能</td><td>手动刷新</td><td>工作台右上角提供刷新按钮，手动刷新所有模块数据</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.23</td><td>辅助功能</td><td>自动轮询</td><td>每30秒自动轮询获取最新的近期事项、动态和通知</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>3.24</td><td>辅助功能</td><td>首屏性能</td><td>工作台首屏加载时间 ≤ 2秒</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== 模块四 ==================== -->
+    <div class="module-title">📌 模块四：项目管理</div>
+    <table>
+        <thead>
+            <tr><th>序号</th><th>子模块</th><th>功能点</th><th>详细描述</th><th>优先级</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>4.1</td><td>项目CRUD</td><td>新建项目</td><td>弹窗填写项目名称、描述，选择Scrum/轻量模板，创建后自动生成产品路线图看板</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>4.2</td><td>项目CRUD</td><td>编辑项目</td><td>修改项目名称、描述、可见性等基本信息</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>4.3</td><td>项目CRUD</td><td>归档项目</td><td>将整个项目归档，从活跃项目列表中移除，可在"已归档项目"中查看</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>4.4</td><td>项目CRUD</td><td>恢复项目</td><td>从已归档列表中恢复项目到活跃状态</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>4.5</td><td>项目CRUD</td><td>删除项目</td><td>彻底删除项目（二次确认），删除后不可恢复</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>4.6</td><td>项目成员</td><td>邀请成员</td><td>通过用户名或邮箱邀请用户加入项目</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>4.7</td><td>项目成员</td><td>移除成员</td><td>从项目中移除成员（仅所有者可操作）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>4.8</td><td>项目成员</td><td>角色管理</td><td>设置成员角色：所有者（Owner）、普通成员（Member）、只读（ReadOnly）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>4.9</td><td>项目成员</td><td>批量加入看板</td><td>创建新看板时可选"将项目成员加入看板"，一键将项目所有成员添加为看板成员</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>4.10</td><td>项目成员</td><td>成员工作占比统计</td><td>统计各成员在项目中的任务量分布（可选）</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+            <tr><td>4.11</td><td>项目视图</td><td>顶部动态标签栏</td><td>显示产品路线图、里程碑、Sprint列表等动态标签，点击切换视图</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>4.12</td><td>项目视图</td><td>星标看板行</td><td>显示本项目下被用户标星的看板，作为快捷置顶区域</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>4.13</td><td>项目视图</td><td>普通看板列表</td><td>展示本项目所有看板，支持拖拽排序，每个看板项带右键菜单</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>4.14</td><td>项目视图</td><td>项目级筛选</td><td>按未完成/已完成状态过滤当前项目下的看板</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>4.15</td><td>项目视图</td><td>共享脑图入口</td><td>进入该项目的共享脑图视图，所有项目成员可协同编辑</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>4.16</td><td>项目视图</td><td>统计入口</td><td>进入项目统计页面，展示Backlog进度、Sprint完成率、缺陷分布</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>4.17</td><td>项目视图</td><td>折叠自己</td><td>收起左侧边栏，扩大主内容区域，保存用户偏好</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>4.18</td><td>项目统计</td><td>Backlog进度</td><td>各列故事点/卡片数占比可视化展示</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>4.19</td><td>项目统计</td><td>Sprint完成率</td><td>各Sprint计划工作量 vs 实际完成工作量对比</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>4.20</td><td>项目统计</td><td>缺陷分布</td><td>缺陷看板各列缺陷分布统计</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+            <tr><td>4.21</td><td>卡片ID</td><td>项目级开关</td><td>支持开启/关闭卡片ID生成，格式为{项目前缀}-{序号}（如DEV-001）</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== 模块五 ==================== -->
+    <div class="module-title">📌 模块五：个人看板与个人脑图</div>
+    <table>
+        <thead>
+            <tr><th>序号</th><th>子模块</th><th>功能点</th><th>详细描述</th><th>优先级</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>5.1</td><td>个人看板</td><td>看板列表展示</td><td>显示用户所有可访问的看板（含示例看板），显示名称、星标状态、所属项目、最后访问时间</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>5.2</td><td>个人看板</td><td>筛选</td><td>按"未完成/已完成"状态过滤看板（看板内是否包含对应状态的卡片）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>5.3</td><td>个人看板</td><td>时间排序</td><td>按最后访问时间、最近更新时间或创建时间排序（升序/降序）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>5.4</td><td>个人看板</td><td>名称排序</td><td>按看板名称的字母或拼音顺序排序</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>5.5</td><td>个人看板</td><td>自定义排序</td><td>用户手动拖拽调整看板顺序，或使用上移/下移/置顶/置底操作，保存到后端</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>5.6</td><td>个人看板</td><td>新建看板</td><td>弹窗（自定义模板/标准模板，看板名称，所属项目可选"无"），与全局快捷创建一致</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>5.7</td><td>个人看板</td><td>看板项菜单</td><td>每个看板项支持：新标签页打开、标星、归档、重命名、移动至项目、复制、删除（权限控制）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>5.8</td><td>个人看板</td><td>查看已归档</td><td>底部链接"查看已归档看板"，跳转到归档管理页面，支持恢复或彻底删除</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>5.9</td><td>个人脑图</td><td>脑图列表展示</td><td>显示用户所有脑图（个人脑图+项目共享脑图），显示名称、所属项目、最后修改时间</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>5.10</td><td>个人脑图</td><td>筛选</td><td>按所属项目筛选脑图列表</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>5.11</td><td>个人脑图</td><td>排序</td><td>按名称或最后修改时间排序（升序/降序）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>5.12</td><td>个人脑图</td><td>新建脑图</td><td>弹窗填写名称、所属项目（可选"无"），支持导入XMind/JSON文件</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>5.13</td><td>个人脑图</td><td>脑图项菜单</td><td>每个脑图项支持：重命名、移动至项目、导出、归档、删除、复制</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>5.14</td><td>个人脑图</td><td>底部链接</td><td>"查看已归档看板"、"查看已归档项目"</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>5.15</td><td>看板模板</td><td>预设模板列表</td><td>提供标准模板：空白看板、产品Backlog、Sprint Backlog、缺陷看板、测试用例库、OKR目标管理、活动策划类项目、用户故事地图等</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== 模块六 ==================== -->
+    <div class="module-title">📌 模块六：看板详情页</div>
+    <table>
+        <thead>
+            <tr><th>序号</th><th>子模块</th><th>功能点</th><th>详细描述</th><th>优先级</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>6.1</td><td>看板头部</td><td>看板名称与信息</td><td>显示看板名称、所属项目、星标图标、归档操作入口</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.2</td><td>看板头部</td><td>时间线入口</td><td>进入时间线视图，按起止日期展示卡片时间条，支持按成员/类型筛选</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>6.3</td><td>看板头部</td><td>图表板入口</td><td>进入图表板，展示列分布、成员负载/故事点分布</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>6.4</td><td>看板头部</td><td>未读状态</td><td>显示当前看板中用户未查看的卡片动态数量</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>6.5</td><td>看板头部</td><td>批量操作</td><td>多选卡片后批量移动、删除、指派成员</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.6</td><td>看板头部</td><td>Sprint/里程碑规划入口</td><td>根据看板类型显示对应的规划按钮（Sprint看板显示规划入口，里程碑看板显示Sprint规划入口）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.7</td><td>成员管理</td><td>看板成员列表</td><td>显示当前看板所有成员（头像、昵称、角色），不同于项目成员</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.8</td><td>成员管理</td><td>添加成员</td><td>通过用户名或邮箱邀请用户加入该看板</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.9</td><td>成员管理</td><td>批量设置成员角色</td><td>多选成员后统一修改角色（只读/普通/管理员）</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>6.10</td><td>筛选面板</td><td>按内容筛选</td><td>输入关键词搜索卡片标题或描述</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.11</td><td>筛选面板</td><td>按标签筛选</td><td>选择预置或自定义标签（支持颜色标签组），支持多选</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.12</td><td>筛选面板</td><td>按成员筛选</td><td>筛选指派给特定成员的卡片</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.13</td><td>筛选面板</td><td>标签组筛选</td><td>使用自定义标签组复合筛选，如"优先级组：高/中/低"</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>6.14</td><td>筛选面板</td><td>清空筛选</td><td>一键清空所有筛选条件</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.15</td><td>看板菜单</td><td>设置周期</td><td>弹窗设置看板的起止日期（时区可选），也可选择"不设置看板周期"</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.16</td><td>看板菜单</td><td>设置所属项目</td><td>将看板移动到另一个项目下，弹窗列出用户有权限的项目</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.17</td><td>看板菜单</td><td>设置看板可见性</td><td>可选：私有（仅看板成员可见）、项目成员可见、公开（有链接者可见）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.18</td><td>看板菜单</td><td>导入</td><td>从外部文件（JSON、CSV、Trello导出）导入卡片和列表到当前看板</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>6.19</td><td>看板菜单</td><td>导出</td><td>导出整个看板数据（含列表、卡片、泳道、标签），可选JSON/CSV/PDF格式</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>6.20</td><td>看板菜单</td><td>归档</td><td>归档整个看板（二次确认），从普通列表消失，可在"已归档看板"中恢复</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.21</td><td>看板菜单</td><td>删除</td><td>彻底删除看板（二次确认），不可恢复</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.22</td><td>看板菜单</td><td>分享快照</td><td>生成当前看板的静态快照链接（只读），可分享给未登录用户或用于报告</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>6.23</td><td>看板菜单</td><td>回收站</td><td>跳转到看板回收站页面，查看已删除的卡片/列表（软删除，可恢复）</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>6.24</td><td>看板动态</td><td>操作记录展示</td><td>展示当前看板内的所有操作记录（创建引用、移动卡片、添加卡片、变更类型等），时间倒序</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.25</td><td>看板动态</td><td>点击定位</td><td>点击动态中的卡片名称可定位到对应卡片</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.26</td><td>列管理</td><td>添加列</td><td>点击"+添加列"按钮，弹出输入框填写列名称，新列追加到最右侧</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.27</td><td>列管理</td><td>删除列</td><td>列右上角"…"菜单中"删除列"，二次确认，该列下所有卡片需选择移至其他列或删除</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.28</td><td>列管理</td><td>列排序</td><td>支持拖拽列头调整列顺序</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.29</td><td>列管理</td><td>重命名</td><td>双击列头或右键菜单修改列名称</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.30</td><td>泳道管理</td><td>启用/禁用泳道</td><td>看板设置中控制是否启用泳道模式（默认关闭）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.31</td><td>泳道管理</td><td>添加泳道</td><td>点击"+添加泳道"按钮，输入泳道名称，新泳道追加到最下方</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.32</td><td>泳道管理</td><td>删除泳道</td><td>泳道左侧菜单或右键菜单"删除泳道"，需处理泳道下所有卡片</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.33</td><td>泳道管理</td><td>置顶</td><td>将选中的泳道移动到最上方</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.34</td><td>泳道管理</td><td>下移</td><td>将泳道向下移动一行</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.35</td><td>泳道管理</td><td>置底</td><td>将泳道移动到最下方</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.36</td><td>泳道管理</td><td>重命名</td><td>双击泳道头修改名称</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.37</td><td>泳道管理</td><td>复制泳道到其他看板</td><td>弹出看板选择器（列出用户有写权限的看板），选择目标看板后，将当前泳道下所有卡片复制到目标看板（自动创建同名泳道或映射到列）</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>6.38</td><td>泳道管理</td><td>里程碑泳道对应史诗</td><td>里程碑看板中泳道对应史诗故事，自动从产品路线图继承</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.39</td><td>泳道管理</td><td>Sprint泳道对应用户故事</td><td>Sprint看板中泳道可对应用户故事，支持按泳道展开</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.40</td><td>卡片管理</td><td>卡片拖拽</td><td>支持跨列、跨泳道拖拽移动卡片</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.41</td><td>卡片管理</td><td>卡片右键菜单</td><td>编辑、删除、复制、移动至其他看板</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.42</td><td>卡片管理</td><td>卡片详情弹窗</td><td>名称、描述、成员、起止时间、附件、评论、卡片类型（史诗故事/任务/缺陷等）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>6.43</td><td>卡片管理</td><td>卡片类型</td><td>支持史诗故事、用户故事、任务、缺陷、其他等类型，可自定义</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>6.44</td><td>卡片管理</td><td>引用卡片</td><td>从其他看板引用卡片到当前看板（链接而非复制），原卡片更新时引用处同步</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>6.45</td><td>卡片管理</td><td>用户故事梳理</td><td>Backlog中添加检查项（Checklist），Sprint规划后拆分为任务卡片</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>6.46</td><td>卡片管理</td><td>缺陷卡片关联</td><td>缺陷卡片可关联用户故事，支持附件上传；Sprint规划时可一并导入</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>6.47</td><td>卡片管理</td><td>批量操作</td><td>多选卡片后批量移动、删除、指派成员</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== 模块七 ==================== -->
+    <div class="module-title">📌 模块七：Scrum专项流程</div>
+    <table>
+        <thead>
+            <tr><th>序号</th><th>子模块</th><th>功能点</th><th>详细描述</th><th>优先级</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>7.1</td><td>产品路线图</td><td>史诗故事管理</td><td>在路线图看板中管理史诗故事列表，支持增删改</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>7.2</td><td>产品路线图</td><td>新建里程碑</td><td>点击"+新建里程碑"，填写名称、起止日期、关联史诗故事列表</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>7.3</td><td>产品路线图</td><td>里程碑列表展示</td><td>以时间线或列表形式展示所有里程碑，含起止日期和关联史诗</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>7.4</td><td>产品路线图</td><td>自动生成里程碑看板</td><td>保存里程碑后，系统在同一项目下自动创建里程碑看板（名称=里程碑名称，周期=里程碑日期），预置列："用户故事池"、"用户故事-待梳理"、"用户故事-梳理完成"，自动生成史诗故事卡片</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>7.5</td><td>里程碑规划</td><td>拖拽史诗至里程碑Backlog</td><td>支持拖拽史诗到里程碑Backlog列（引用或复制）</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>7.6</td><td>里程碑看板</td><td>预置列与史诗泳道</td><td>里程碑看板自动预置列和史诗泳道，每个史诗故事作为一条泳道</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>7.7</td><td>里程碑看板</td><td>拆分用户故事</td><td>在里程碑看板中将史诗故事拆分为多个用户故事卡片</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>7.8</td><td>里程碑看板</td><td>Sprint规划入口</td><td>点击"Sprint规划"按钮进入规划流程</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>7.9</td><td>里程碑看板</td><td>Sprint规划弹窗</td><td>弹出窗口：设置Sprint名称、起止日期，勾选要从当前里程碑看板导入的用户故事</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>7.10</td><td>里程碑看板</td><td>自动生成Sprint看板</td><td>系统自动创建Sprint看板（名称=Sprint名称，周期=Sprint日期），预置"待办"、"进行中"、"已完成"列，将选中的用户故事作为卡片添加到"待办"列，用户故事下的任务一同导入</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>7.11</td><td>Sprint看板</td><td>继承所有普通看板能力</td><td>Sprint看板拥有普通看板的所有功能（列/泳道管理、筛选、菜单等）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>7.12</td><td>Sprint看板</td><td>按泳道展开</td><td>Sprint看板支持按泳道（对应用户故事）展开视图，便于按故事跟踪任务</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>7.13</td><td>Sprint看板</td><td>拆分任务</td><td>在Sprint看板中将用户故事卡片拆分为具体任务卡片</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>7.14</td><td>Sprint看板</td><td>看板统计</td><td>菜单中特有"看板统计"入口，详见模块八</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>7.15</td><td>缺陷看板</td><td>独立缺陷管理</td><td>独立管理遗留/反馈缺陷，可在项目看板视图中单独查看</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>7.16</td><td>缺陷看板</td><td>Sprint内缺陷跟踪</td><td>Sprint内产生的缺陷可在Sprint看板中跟踪（作为缺陷卡片）</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>7.17</td><td>Sprint回顾看板</td><td>三列模板</td><td>预置三列："做得好的"（Good）、"待改进"（Improve）、"行动项"（Action）</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>7.18</td><td>看板类型</td><td>类型枚举</td><td>系统支持看板类型：NORMAL（普通）、ROADMAP（产品路线图）、MILESTONE（里程碑）、SPRINT（冲刺）、DEFECT（缺陷）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== 模块八 ==================== -->
+    <div class="module-title">📌 模块八：统计与度量</div>
+    <table>
+        <thead>
+            <tr><th>序号</th><th>子模块</th><th>功能点</th><th>详细描述</th><th>优先级</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>8.1</td><td>Sprint燃尽图</td><td>实际线与参考线</td><td>展示实际剩余工作量趋势线 vs 理想参考线</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>8.2</td><td>Sprint燃尽图</td><td>统计模式</td><td>支持按工作量（故事点）或卡片数量统计</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>8.3</td><td>Sprint燃尽图</td><td>统计方式</td><td>支持累加（累计完成）或每日快照（每日剩余）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>8.4</td><td>Sprint燃尽图</td><td>设置工作日</td><td>排除周末或特定假日，仅统计工作日数据</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>8.5</td><td>Sprint燃尽图</td><td>设置统计列</td><td>选择哪些列纳入"未完成"工作量（如"待办"、"进行中"）</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>8.6</td><td>Sprint燃尽图</td><td>设置完成列</td><td>标记哪些列代表"已完成"（如"已完成"、"关闭"）</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>8.7</td><td>Sprint燃尽图</td><td>数据展示</td><td>显示总工作量、已完成、剩余；横坐标日期，纵坐标工作量</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>8.8</td><td>Sprint燃尽图</td><td>每日明细表格</td><td>表格展示每日明细：日期、卡片总数、总工作量、新增工作量、完成工作量、剩余工作量</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>8.9</td><td>Sprint燃尽图</td><td>手动备注</td><td>支持手动记录每日备注（如"2026-06-02 剩余：123"）</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+            <tr><td>8.10</td><td>Sprint燃尽图</td><td>导出图表</td><td>导出图表为图片/PDF，或生成快照链接</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>8.11</td><td>Sprint燃尽图</td><td>自动更新</td><td>卡片/故事点/列变更触发燃尽快照更新，WebSocket或轮询刷新</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>8.12</td><td>任务分布</td><td>按成员分布</td><td>展示各成员的任务数量或故事点分布（柱状图/饼图）</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>8.13</td><td>任务分布</td><td>按列状态分布</td><td>展示各列（待办/进行中/已完成）的卡片分布</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>8.14</td><td>任务分布</td><td>按标签分布</td><td>展示不同标签下的任务数量分布</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+            <tr><td>8.15</td><td>任务周期</td><td>平均完成时间</td><td>计算卡片从"进行中"到"已完成"的平均时长（周期时间）</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+            <tr><td>8.16</td><td>产品Backlog进度</td><td>各列占比</td><td>展示产品Backlog中各列的故事点/卡片数占比</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>8.17</td><td>迭代完成率</td><td>计划vs实际</td><td>各Sprint计划工作量 vs 实际完成工作量对比</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>8.18</td><td>团队速率</td><td>完成故事点趋势</td><td>各Sprint完成故事点的趋势图，用于预测未来交付能力</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>8.19</td><td>迭代缺陷统计</td><td>BUG分布与修复率</td><td>各Sprint缺陷分布与修复率统计</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+            <tr><td>8.20</td><td>项目缺陷分布</td><td>缺陷看板各列分布</td><td>缺陷看板各列的缺陷分布统计</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+            <tr><td>8.21</td><td>成员工作分布</td><td>跨看板/脑图统计</td><td>各成员在项目中跨看板/脑图的任务量与完成情况</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== 模块九 ==================== -->
+    <div class="module-title">📌 模块九：脑图</div>
+    <table>
+        <thead>
+            <tr><th>序号</th><th>子模块</th><th>功能点</th><th>详细描述</th><th>优先级</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>9.1</td><td>脑图列表</td><td>同模块五个人脑图</td><td>展示、筛选、排序、新建、导入XMind/JSON、导出</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>9.2</td><td>脑图编辑器</td><td>节点增删改</td><td>支持添加子节点、兄弟节点，删除节点，编辑节点文本</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>9.3</td><td>脑图编辑器</td><td>拖拽布局</td><td>支持拖拽节点调整位置和层级关系</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>9.4</td><td>脑图编辑器</td><td>节点连线</td><td>支持节点之间的自定义连线（关系线）</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+            <tr><td>9.5</td><td>脑图编辑器</td><td>画布缩放</td><td>支持鼠标滚轮缩放脑图画布</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>9.6</td><td>脑图编辑器</td><td>小地图导航</td><td>画布右下角显示小地图，便于在大脑图中定位</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+            <tr><td>9.7</td><td>脑图编辑器</td><td>JSON导入导出</td><td>支持脑图数据的JSON格式导入导出</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>9.8</td><td>节点详情</td><td>节点详细信息</td><td>每个节点可设置：标题、描述、成员、标签、日期、检查项、附件、评论</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>9.9</td><td>脑图与看板</td><td>节点引用到看板</td><td>将脑图节点引用到看板中生成卡片，保持关联</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>9.10</td><td>脑图与看板</td><td>卡片转为脑图节点</td><td>将看板中的卡片转为脑图节点，保持关联</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+            <tr><td>9.11</td><td>脑图与看板</td><td>双向同步更新</td><td>节点/卡片内容变更时，关联方同步更新</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+            <tr><td>9.12</td><td>项目共享脑图</td><td>项目级共享</td><td>每个项目至少有一个共享脑图，所有项目成员按权限访问和编辑</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== 模块十 ==================== -->
+    <div class="module-title">📌 模块十：实时协作与通知</div>
+    <table>
+        <thead>
+            <tr><th>序号</th><th>子模块</th><th>功能点</th><th>详细描述</th><th>优先级</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>10.1</td><td>WebSocket</td><td>按看板订阅</td><td>WebSocket连接后按看板ID订阅，只接收当前看板的变更推送</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>10.2</td><td>WebSocket</td><td>卡片变更推送</td><td>卡片创建、更新、删除、移动时推送变更给看板内所有在线成员</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>10.3</td><td>WebSocket</td><td>列/泳道变更推送</td><td>列和泳道的增删改操作实时推送给在线成员</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>10.4</td><td>WebSocket</td><td>成员变更推送</td><td>看板成员添加/移除时推送通知</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>10.5</td><td>WebSocket</td><td>评论推送</td><td>卡片新增评论或@提醒时推送给相关成员</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>10.6</td><td>乐观锁</td><td>卡片版本冲突提示</td><td>卡片使用version字段实现乐观锁，多人同时编辑时提示冲突并建议刷新</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>10.7</td><td>活动日志</td><td>全局日志</td><td>记录所有用户操作，供工作台动态使用</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>10.8</td><td>活动日志</td><td>看板级日志</td><td>记录当前看板内操作，供看板动态使用</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>10.9</td><td>离线重连</td><td>增量日志拉取</td><td>用户离线后重连时，拉取离线期间的评论、@提醒、日志增量</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== 模块十一 ==================== -->
+    <div class="module-title">📌 模块十一：数据导入导出</div>
+    <table>
+        <thead>
+            <tr><th>序号</th><th>子模块</th><th>功能点</th><th>详细描述</th><th>优先级</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>11.1</td><td>看板导入</td><td>JSON格式</td><td>从JSON文件导入看板数据（含列表、卡片、泳道、标签）</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>11.2</td><td>看板导入</td><td>CSV格式</td><td>从CSV文件导入卡片数据</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+            <tr><td>11.3</td><td>看板导入</td><td>Trello格式</td><td>从Trello导出的JSON文件导入看板数据</td><td><span class="priority-badge badge-P2">P2</span></td></tr>
+            <tr><td>11.4</td><td>看板导出</td><td>JSON格式</td><td>导出看板完整数据为JSON文件</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>11.5</td><td>看板导出</td><td>CSV格式</td><td>导出看板卡片数据为CSV文件（可用Excel打开）</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>11.6</td><td>看板导出</td><td>PDF快照</td><td>导出看板当前状态为PDF快照（含卡片、列表、泳道）</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== 模块十二 ==================== -->
+    <div class="module-title">📌 模块十二：非功能性需求</div>
+    <table>
+        <thead>
+            <tr><th>序号</th><th>子模块</th><th>功能点</th><th>详细描述</th><th>优先级</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>12.1</td><td>性能</td><td>工作台加载时间</td><td>工作台首屏加载 ≤ 2秒</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>12.2</td><td>性能</td><td>看板列表分页</td><td>看板列表支持分页或虚拟滚动，避免一次性加载过多数据</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>12.3</td><td>性能</td><td>轮询间隔</td><td>轮询间隔30秒，避免影响服务器性能</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>12.4</td><td>权限</td><td>项目级RBAC</td><td>项目级角色：所有者（Owner）、普通成员（Member）、只读（ReadOnly），接口与UI双重校验</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>12.5</td><td>权限</td><td>看板级RBAC</td><td>看板级角色：管理员（Admin）、普通成员（Member）、只读（ReadOnly）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>12.6</td><td>权限</td><td>公开链接只读</td><td>公开快照链接为只读模式，不可编辑</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>12.7</td><td>响应式</td><td>侧边栏折叠</td><td>支持侧边栏折叠，在小屏幕下自动收起为汉堡菜单</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>12.8</td><td>响应式</td><td>小屏横向滚动</td><td>看板详情页在小屏幕下支持横向滚动</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>12.9</td><td>数据库</td><td>第三范式</td><td>数据库设计至少满足第三范式（3NF）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>12.10</td><td>数据库</td><td>数据表</td><td>包含：用户、项目、看板、列、泳道、卡片、标签、检查项、评论、脑图、操作日志、星标、访问记录、燃尽快照、引用关系等</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>12.11</td><td>安全</td><td>密码加密</td><td>用户密码使用BCrypt加密存储</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>12.12</td><td>安全</td><td>JWT认证</td><td>所有API接口使用JWT Token认证</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>12.13</td><td>安全</td><td>上传校验</td><td>头像、附件上传时校验文件类型和大小限制</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>12.14</td><td>安全</td><td>XSS防护</td><td>前端输入输出进行XSS过滤，防止跨站脚本攻击</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>12.15</td><td>API</td><td>RESTful风格</td><td>所有API遵循RESTful设计规范</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>12.16</td><td>API</td><td>统一响应体</td><td>所有API返回统一格式的响应体（code、message、data）</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>12.17</td><td>API</td><td>Swagger文档</td><td>使用Swagger/OpenAPI生成API文档</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>12.18</td><td>测试</td><td>后端单元测试</td><td>核心业务逻辑编写单元测试，覆盖率 ≥ 60%</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>12.19</td><td>测试</td><td>集成测试</td><td>关键API流程编写集成测试</td><td><span class="priority-badge badge-P1">P1</span></td></tr>
+            <tr><td>12.20</td><td>文档</td><td>用户手册</td><td>提供用户操作手册，包含功能介绍和操作截图</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+            <tr><td>12.21</td><td>前后端分离</td><td>严格分离</td><td>前后端严格分离，通过RESTful API通信，不混用模板引擎</td><td><span class="priority-badge badge-P0">P0</span></td></tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== 优先级汇总 ==================== -->
+    <div class="module-title">📊 功能优先级汇总</div>
+    <table class="summary-table">
+        <thead>
+            <tr><th>优先级</th><th>含义</th><th>功能点数</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><span class="priority-badge badge-P0">P0</span></td><td>必须有，核心功能，不可交付</td><td>82</td></tr>
+            <tr><td><span class="priority-badge badge-P1">P1</span></td><td>应该有，重要功能，尽量完成</td><td>43</td></tr>
+            <tr><td><span class="priority-badge badge-P2">P2</span></td><td>可以有，锦上添花，有余力实现</td><td>14</td></tr>
+            <tr style="font-weight:700; background:#eef2f6;"><td colspan="2">合计</td><td>139</td></tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        Scrum管理软件 · 需求与功能规格说明书 · 版本 1.0<br>
+        开发团队：张茗杰、殷浩然、钟礼豪、臧传杨 · 2026年6月
+    </div>
+</div>
+</body>
+</html>
