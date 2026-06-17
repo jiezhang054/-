@@ -1,24 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Row, Col, Card, Select, Switch, Table, Button, Typography, Space } from 'antd';
+import { useQuery } from '@tanstack/react-query';
+import { Row, Col, Card, Select, Switch, Table, Button, Typography, Space, Spin } from 'antd';
 import ReactECharts from 'echarts-for-react';
 import { DownloadOutlined, LinkOutlined } from '@ant-design/icons';
 import type { BurndownConfig } from '../../types/board';
 import { useBoardData } from './useBoardData';
-import { Spin } from 'antd';
+import { boardsApi } from '../../api/boards';
 
 const { Title } = Typography;
-
-function generateBurndownData(total: number) {
-  const days = ['06-01', '06-02', '06-03', '06-04', '06-05', '06-06', '06-07', '06-08', '06-09', '06-10'];
-  let remaining = total;
-  return days.map((date, i) => {
-    const completed = i > 0 ? Math.floor(Math.random() * 3) + 1 : 0;
-    remaining = Math.max(0, remaining - completed);
-    const reference = total - (total / (days.length - 1)) * i;
-    return { date, remaining, completed, added: i === 2 ? 2 : 0, reference: Math.round(reference) };
-  });
-}
 
 export function BoardStatsPage() {
   const { boardId } = useParams();
@@ -32,57 +22,85 @@ export function BoardStatsPage() {
     doneColumnIds: [],
   });
 
+  useEffect(() => {
+    if (board?.columns) {
+      const done = board.columns.filter((c) => c.name.includes('完成')).map((c) => c.id);
+      const todo = board.columns.filter((c) => !c.name.includes('完成')).map((c) => c.id);
+      setConfig((c) => ({ ...c, doneColumnIds: done, todoColumnIds: todo }));
+    }
+  }, [board]);
+
+  const { data: burndown = [], isLoading: loadingChart } = useQuery({
+    queryKey: ['burndown', id, config],
+    queryFn: () => boardsApi.getBurndown(id, config),
+    enabled: !!board,
+  });
+
   if (isLoading || !board) return <Spin style={{ display: 'block', margin: '100px auto' }} />;
 
   const totalWorkload = board.cards.reduce((s, c) => s + (c.workload ?? 1), 0);
-
-  const data = generateBurndownData(totalWorkload);
+  const completed = board.cards.filter((c) => config.doneColumnIds.includes(c.columnId))
+    .reduce((s, c) => s + (c.workload ?? 1), 0);
 
   const chartOption = {
     tooltip: { trigger: 'axis' },
     legend: { data: ['实际剩余', '参考线'] },
-    xAxis: { type: 'category', data: data.map((d) => d.date) },
+    xAxis: { type: 'category', data: burndown.map((d) => d.date) },
     yAxis: { type: 'value', name: config.mode === 'workload' ? '工作量(SP)' : '卡片数' },
     series: [
-      { name: '实际剩余', type: 'line', data: data.map((d) => d.remaining), itemStyle: { color: '#1677ff' } },
-      { name: '参考线', type: 'line', data: data.map((d) => d.reference), lineStyle: { type: 'dashed', color: '#8f959e' } },
+      { name: '实际剩余', type: 'line', data: burndown.map((d) => d.remaining), itemStyle: { color: '#1677ff' }, smooth: true },
+      { name: '参考线', type: 'line', data: burndown.map((d) => d.reference), lineStyle: { type: 'dashed', color: '#8f959e' } },
     ],
   };
 
+  const exportPng = () => {
+    const chart = document.querySelector('.burndown-chart canvas') as HTMLCanvasElement | null;
+    if (!chart) return;
+    const a = document.createElement('a');
+    a.href = chart.toDataURL('image/png');
+    a.download = `burndown-${id}.png`;
+    a.click();
+  };
+
   return (
-    <div style={{ padding: 24 }}>
+    <div className="page-content">
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Title level={3}>{board.name} - 燃尽图</Title>
+        <Title level={3} style={{ margin: 0 }}>{board.name} - 燃尽图</Title>
         <Space>
-          <Button icon={<DownloadOutlined />}>导出 PNG</Button>
-          <Button icon={<LinkOutlined />}>生成快照</Button>
+          <Button icon={<DownloadOutlined />} onClick={exportPng}>导出 PNG</Button>
+          <Button icon={<LinkOutlined />} onClick={() => boardsApi.createSnapshot(id)}>生成快照</Button>
         </Space>
       </div>
       <Row gutter={16}>
         <Col span={6}>
-          <Card title="统计配置" size="small">
+          <Card title="统计配置" size="small" className="panel-card">
             <div style={{ marginBottom: 12 }}>
-              <div style={{ marginBottom: 4 }}>统计模式</div>
+              <div className="field-label">统计模式</div>
               <Select style={{ width: '100%' }} value={config.mode}
                 onChange={(v) => setConfig({ ...config, mode: v })}
                 options={[{ value: 'workload', label: '工作量' }, { value: 'count', label: '卡片数' }]} />
             </div>
             <div style={{ marginBottom: 12 }}>
-              <div style={{ marginBottom: 4 }}>统计方式</div>
+              <div className="field-label">统计方式</div>
               <Select style={{ width: '100%' }} value={config.method}
                 onChange={(v) => setConfig({ ...config, method: v })}
                 options={[{ value: 'cumulative', label: '累加' }, { value: 'snapshot', label: '快照' }]} />
             </div>
-            <div>仅工作日 <Switch checked={config.workdaysOnly} onChange={(v) => setConfig({ ...config, workdaysOnly: v })} /></div>
+            <div style={{ marginBottom: 12 }}>仅工作日 <Switch checked={config.workdaysOnly} onChange={(v) => setConfig({ ...config, workdaysOnly: v })} /></div>
+            <div className="stats-summary">
+              <div>总工作量：<strong>{totalWorkload} SP</strong></div>
+              <div>已完成：<strong>{completed} SP</strong></div>
+              <div>剩余：<strong>{totalWorkload - completed} SP</strong></div>
+            </div>
           </Card>
         </Col>
         <Col span={18}>
-          <Card>
-            <ReactECharts option={chartOption} style={{ height: 360 }} />
+          <Card className="panel-card">
+            {loadingChart ? <Spin /> : <ReactECharts className="burndown-chart" option={chartOption} style={{ height: 360 }} />}
             <Table
               size="small"
               pagination={false}
-              dataSource={data}
+              dataSource={burndown}
               columns={[
                 { title: '日期', dataIndex: 'date' },
                 { title: '剩余', dataIndex: 'remaining' },
