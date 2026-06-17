@@ -1,5 +1,7 @@
 import { apiClient, type ApiResponse } from './client';
-import type { Board, Project, ActivityItem, RecentVisit, BurndownPoint, BurndownConfig } from '../types/board';
+import type { Board, ActivityItem, RecentVisit, BurndownPoint, BurndownConfig } from '../types/board';
+export { projectsApi, globalApi } from './global';
+import { projectsApi } from './global';
 
 export const boardsApi = {
   getById: (id: number) =>
@@ -27,11 +29,6 @@ export const boardsApi = {
     apiClient.post<ApiResponse<{ url: string }>>(`/boards/${boardId}/snapshot`).then((r) => r.data.data),
 };
 
-export const projectsApi = {
-  list: () => apiClient.get<ApiResponse<Project[]>>('/projects').then((r) => r.data.data),
-  getById: (id: number) => apiClient.get<ApiResponse<Project>>(`/projects/${id}`).then((r) => r.data.data),
-  create: (name: string) => apiClient.post<ApiResponse<Project>>('/projects', { name }).then((r) => r.data.data),
-};
 
 export const workspaceApi = {
   dashboard: () =>

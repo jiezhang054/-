@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -146,5 +147,45 @@ public class BoardService {
             cardMapper.updateById(ref);
         }
         return toCardDTO(card);
+    }
+
+    @Transactional
+    public Map<String, Object> createBoard(Long projectId, String name, String type, String template) {
+        if (!StringUtils.hasText(name)) throw new IllegalArgumentException("看板名称不能为空");
+        Board board = new Board();
+        board.setName(name);
+        board.setType(StringUtils.hasText(type) ? type : "NORMAL");
+        board.setProjectId(projectId);
+        board.setSwimlanesEnabled("MILESTONE".equals(board.getType()) || "SPRINT".equals(board.getType()));
+        board.setVisibility("PROJECT");
+        board.setArchived(false);
+        boardMapper.insert(board);
+
+        String[] columns = columnsForTemplate(template != null ? template : board.getType());
+        for (int i = 0; i < columns.length; i++) {
+            BoardColumn col = new BoardColumn();
+            col.setBoardId(board.getId());
+            col.setName(columns[i]);
+            col.setSortOrder(i);
+            columnMapper.insert(col);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", board.getId());
+        result.put("name", board.getName());
+        result.put("type", board.getType());
+        result.put("projectId", board.getProjectId());
+        return result;
+    }
+
+    private String[] columnsForTemplate(String template) {
+        return switch (template.toUpperCase()) {
+            case "ROADMAP" -> new String[]{"史诗故事池", "规划中", "进行中", "已完成"};
+            case "MILESTONE" -> new String[]{"用户故事池", "用户故事-待梳理", "用户故事-梳理完成"};
+            case "SPRINT" -> new String[]{"待办", "进行中", "测试中", "已完成"};
+            case "DEFECT" -> new String[]{"新建", "处理中", "待验证", "已关闭"};
+            case "BACKLOG" -> new String[]{"用户故事池", "待梳理", "梳理完成", "实现中", "已完成"};
+            default -> new String[]{"待办", "进行中", "已完成"};
+        };
     }
 }

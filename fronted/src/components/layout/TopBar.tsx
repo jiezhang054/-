@@ -1,4 +1,5 @@
-import { Layout, Button, Dropdown, Badge, Space, Avatar, Input, Modal, List } from 'antd';
+import { useState } from 'react';
+import { Layout, Button, Dropdown, Badge, Space, Avatar } from 'antd';
 import {
   PlusOutlined,
   HomeOutlined,
@@ -7,13 +8,17 @@ import {
   SearchOutlined,
   LogoutOutlined,
   GlobalOutlined,
+  QuestionCircleOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useUIStore } from '../../stores/useUIStore';
-import { MOCK_BOARDS } from '../../mocks/boards';
-import { MOCK_ACTIVITIES } from '../../mocks/activities';
+import { authApi } from '../../api/auth';
+import { CreateBoardModal } from '../global/CreateBoardModal';
+import { CreateMindmapModal } from '../global/CreateMindmapModal';
+import { BoardNavModal } from '../global/BoardNavModal';
+import { NotificationPanel, useNotificationCount } from '../global/NotificationPanel';
 import type { MenuProps } from 'antd';
 
 const { Header } = Layout;
@@ -23,14 +28,21 @@ export function TopBar() {
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuthStore();
   const { setLanguage } = useUIStore();
+  const unreadCount = useNotificationCount();
+
+  const [boardModalOpen, setBoardModalOpen] = useState(false);
+  const [mindmapModalOpen, setMindmapModalOpen] = useState(false);
+  const [navModalOpen, setNavModalOpen] = useState(false);
+  const [notifyOpen, setNotifyOpen] = useState(false);
 
   const createItems: MenuProps['items'] = [
-    { key: 'board', label: '新建看板', onClick: () => navigate('/projects/1') },
-    { key: 'mindmap', label: '新建脑图', onClick: () => navigate('/my/mindmaps') },
+    { key: 'board', label: '新建看板', onClick: () => setBoardModalOpen(true) },
+    { key: 'mindmap', label: '新建脑图', onClick: () => setMindmapModalOpen(true) },
   ];
 
   const userItems: MenuProps['items'] = [
     { key: 'profile', label: '个人中心', icon: <UserOutlined />, onClick: () => navigate('/settings/profile') },
+    { key: 'help', label: '帮助', icon: <QuestionCircleOutlined />, onClick: () => window.open('https://www.lg.team/', '_blank') },
     {
       key: 'lang-zh',
       label: '中文',
@@ -38,7 +50,7 @@ export function TopBar() {
       onClick: async () => {
         i18n.changeLanguage('zh-CN');
         setLanguage('zh-CN');
-        try { await import('../../api/auth').then((m) => m.authApi.updateSettings({ locale: 'zh-CN' })); } catch { /* ignore */ }
+        try { await authApi.updateSettings({ locale: 'zh-CN' }); } catch { /* ignore */ }
       },
     },
     {
@@ -48,51 +60,40 @@ export function TopBar() {
       onClick: async () => {
         i18n.changeLanguage('en-US');
         setLanguage('en-US');
-        try { await import('../../api/auth').then((m) => m.authApi.updateSettings({ locale: 'en-US' })); } catch { /* ignore */ }
+        try { await authApi.updateSettings({ locale: 'en-US' }); } catch { /* ignore */ }
       },
     },
     { type: 'divider' },
     { key: 'logout', label: t('logout'), icon: <LogoutOutlined />, onClick: () => { logout(); navigate('/login'); } },
   ];
 
-  const showBoardNav = () => {
-    Modal.info({
-      title: '看板导航',
-      width: 480,
-      content: (
-        <List
-          dataSource={Object.values(MOCK_BOARDS)}
-          renderItem={(b) => (
-            <List.Item style={{ cursor: 'pointer' }} onClick={() => { Modal.destroyAll(); navigate(`/board/${b.id}`); }}>
-              {b.name} · {b.projectName}
-            </List.Item>
-          )}
-        />
-      ),
-      icon: null,
-    });
-  };
-
   return (
-    <Header style={{ background: '#fff', borderBottom: '1px solid #e8e8e8', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, lineHeight: '56px' }}>
-      <Space>
-        <Dropdown menu={{ items: createItems }}>
-          <Button type="primary" icon={<PlusOutlined />}>创建</Button>
-        </Dropdown>
-        <Input prefix={<SearchOutlined />} placeholder="搜索看板" style={{ width: 200 }} onClick={showBoardNav} readOnly />
-        <Button type="text" icon={<HomeOutlined />} onClick={() => navigate('/workspace')} />
-      </Space>
-      <Space size={16}>
-        <Badge count={3}>
-          <BellOutlined style={{ fontSize: 18, cursor: 'pointer' }} onClick={() => Modal.info({ title: '通知', content: MOCK_ACTIVITIES.map((a) => <div key={a.id}>{a.userName} {a.action}</div>) })} />
-        </Badge>
-        <Dropdown menu={{ items: userItems }}>
-          <Space style={{ cursor: 'pointer' }}>
-            <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#1677ff' }} />
-            <span>{user?.displayName || '访客'}</span>
-          </Space>
-        </Dropdown>
-      </Space>
-    </Header>
+    <>
+      <Header style={{ background: '#fff', borderBottom: '1px solid #e8e8e8', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, lineHeight: '56px' }}>
+        <Space>
+          <Dropdown menu={{ items: createItems }}>
+            <Button type="primary" icon={<PlusOutlined />}>创建</Button>
+          </Dropdown>
+          <Button icon={<SearchOutlined />} onClick={() => setNavModalOpen(true)}>看板导航</Button>
+          <Button type="text" icon={<HomeOutlined />} title="回到首页" onClick={() => navigate('/workspace')} />
+        </Space>
+        <Space size={16}>
+          <Badge count={unreadCount} size="small">
+            <BellOutlined style={{ fontSize: 18, cursor: 'pointer' }} onClick={() => setNotifyOpen(true)} />
+          </Badge>
+          <Dropdown menu={{ items: userItems }}>
+            <Space style={{ cursor: 'pointer' }}>
+              <Avatar src={user?.avatar} icon={<UserOutlined />} style={{ backgroundColor: '#1677ff' }} />
+              <span>{user?.displayName || '访客'}</span>
+            </Space>
+          </Dropdown>
+        </Space>
+      </Header>
+
+      <CreateBoardModal open={boardModalOpen} onClose={() => setBoardModalOpen(false)} onCreated={(id) => navigate(`/board/${id}`)} />
+      <CreateMindmapModal open={mindmapModalOpen} onClose={() => setMindmapModalOpen(false)} onCreated={(id) => navigate(`/mindmap/${id}`)} />
+      <BoardNavModal open={navModalOpen} onClose={() => setNavModalOpen(false)} />
+      <NotificationPanel open={notifyOpen} onClose={() => setNotifyOpen(false)} />
+    </>
   );
 }

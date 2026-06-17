@@ -99,6 +99,16 @@ public class DataInitializer implements CommandLineRunner {
             "INSERT INTO activity_logs (user_id, action, card_id, board_id) VALUES (?, '移动了卡片', 5, 3)", ownerId);
         jdbcTemplate.update(
             "INSERT INTO activity_logs (user_id, action, card_id, board_id) VALUES (?, '创建了卡片', 6, 3)", ownerId);
+
+        jdbcTemplate.update(
+            "INSERT INTO notifications (user_id, type, title, content, link_type, link_id, read_flag) VALUES (?, 'ASSIGN', '卡片指派', '您被指派到卡片「支付接口联调」', 'board', 3, FALSE)",
+            ownerId);
+        jdbcTemplate.update(
+            "INSERT INTO notifications (user_id, type, title, content, link_type, link_id, read_flag) VALUES (?, 'MENTION', '@提醒', '殷浩然在评论中提到了您', 'board', 3, FALSE)",
+            ownerId);
+        jdbcTemplate.update(
+            "INSERT INTO notifications (user_id, type, title, content, link_type, link_id, read_flag) VALUES (?, 'SPRINT', 'Sprint 提醒', 'Sprint 1 将于 3 天后结束', 'board', 3, TRUE)",
+            ownerId);
     }
 
     private void insertBoard(long id, String name, String type, boolean swimlanes, String start, String end) {

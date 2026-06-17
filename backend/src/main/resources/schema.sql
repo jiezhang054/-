@@ -113,3 +113,25 @@ CREATE TABLE IF NOT EXISTS burndown_snapshots (
     added INT NOT NULL DEFAULT 0,
     UNIQUE(board_id, snapshot_date)
 );
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    type VARCHAR(32) NOT NULL,
+    title VARCHAR(256) NOT NULL,
+    content VARCHAR(512),
+    link_type VARCHAR(16),
+    link_id BIGINT,
+    read_flag BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS mindmaps (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(128) NOT NULL,
+    project_id BIGINT,
+    owner_id BIGINT NOT NULL,
+    content TEXT,
+    archived BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

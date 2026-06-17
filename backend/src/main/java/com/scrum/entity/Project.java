@@ -11,6 +11,8 @@ public class Project {
     private String name;
     private String description;
     private Long ownerId;
+    private String template;
+    private Boolean archived;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -20,4 +22,8 @@ public class Project {
     public void setDescription(String description) { this.description = description; }
     public Long getOwnerId() { return ownerId; }
     public void setOwnerId(Long ownerId) { this.ownerId = ownerId; }
+    public String getTemplate() { return template; }
+    public void setTemplate(String template) { this.template = template; }
+    public Boolean getArchived() { return archived; }
+    public void setArchived(Boolean archived) { this.archived = archived; }
 }
