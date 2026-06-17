@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ class MyBoardsServiceTest {
     @Autowired private MyBoardsService myBoardsService;
     @Autowired private UserMapper userMapper;
     @Autowired private MindmapService mindmapService;
+    @Autowired private JdbcTemplate jdbcTemplate;
 
     private Long zhongId;
 
@@ -76,5 +78,18 @@ class MyBoardsServiceTest {
         mindmapService.archive(id, zhongId);
         List<Map<String, Object>> archived = mindmapService.listArchived(zhongId);
         assertTrue(archived.stream().anyMatch(m -> id.equals(((Number) m.get("id")).longValue())));
+        mindmapService.restore(id, zhongId);
+        List<Map<String, Object>> active = mindmapService.listForUser(zhongId, null, "name", "asc");
+        assertTrue(active.stream().anyMatch(m -> id.equals(((Number) m.get("id")).longValue())));
+    }
+
+    @Test
+    void createBoardWithoutProjectAndAddMembers() {
+        Map<String, Object> board = myBoardsService.createBoard(zhongId, "成员测试看板", "NORMAL", 1L, true);
+        assertNotNull(board.get("id"));
+        Integer count = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM board_members WHERE board_id = ?",
+            Integer.class, ((Number) board.get("id")).longValue());
+        assertTrue(count != null && count > 0);
     }
 }

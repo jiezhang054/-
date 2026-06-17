@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Input, List, Typography, Tabs, Empty } from 'antd';
+import { Modal, Input, List, Typography, Tabs, Empty, Button } from 'antd';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { globalApi } from '../../api/global';
@@ -92,15 +92,25 @@ export function BoardNavModal({ open, onClose }: Props) {
                   size="small"
                   dataSource={data?.archivedBoards ?? []}
                   locale={{ emptyText: '无' }}
-                  renderItem={(b) => <List.Item>{b.name} · {b.projectName}</List.Item>}
+                  renderItem={(b) => (
+                    <List.Item style={{ cursor: 'pointer' }} onClick={() => { onClose(); navigate('/my/boards/archived'); }}>
+                      {b.name} · {b.projectName}
+                    </List.Item>
+                  )}
                 />
                 <Typography.Text type="secondary">已归档项目</Typography.Text>
                 <List
                   size="small"
                   dataSource={data?.archivedProjects ?? []}
                   locale={{ emptyText: '无' }}
-                  renderItem={(p) => <List.Item>{p.name}</List.Item>}
+                  renderItem={(p) => (
+                    <List.Item style={{ cursor: 'pointer' }} onClick={() => { onClose(); navigate('/my/projects/archived'); }}>
+                      {p.name}
+                    </List.Item>
+                  )}
                 />
+                <Button type="link" onClick={() => { onClose(); navigate('/my/boards/archived'); }}>管理已归档看板</Button>
+                <Button type="link" onClick={() => { onClose(); navigate('/my/projects/archived'); }}>管理已归档项目</Button>
               </>
             ),
           },

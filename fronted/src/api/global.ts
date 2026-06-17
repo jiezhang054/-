@@ -54,7 +54,7 @@ export const globalApi = {
   markAllNotificationsRead: () =>
     apiClient.post('/notifications/read-all'),
 
-  createBoard: (data: { name: string; projectId: number; type?: string; template?: string }) =>
+  createBoard: (data: { name: string; projectId: number; type?: string; template?: string; addProjectMembers?: boolean }) =>
     apiClient.post<ApiResponse<{ id: number; name: string }>>('/boards', data).then((r) => r.data.data),
 
   createMindmap: (data: { name: string; projectId?: number; content?: string }) =>

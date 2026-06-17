@@ -22,18 +22,27 @@ public class ProjectService {
     @Autowired private JdbcTemplate jdbcTemplate;
 
     public List<Map<String, Object>> listForUser(Long userId) {
-        List<Long> projectIds = jdbcTemplate.queryForList(
-            "SELECT project_id FROM project_members WHERE user_id = ?", Long.class, userId);
-        if (projectIds.isEmpty()) return List.of();
-
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (Long pid : projectIds) {
-            Project p = projectMapper.selectById(pid);
-            if (p == null || Boolean.TRUE.equals(p.getArchived())) continue;
-            result.add(toProjectMap(p, userId));
-        }
-        result.sort((a, b) -> String.valueOf(a.get("name")).compareTo(String.valueOf(b.get("name"))));
-        return result;
+        return jdbcTemplate.query(
+            "SELECT p.id, p.name, p.description, p.template, rv.visited_at as lastVisitedAt " +
+            "FROM projects p JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = ? " +
+            "LEFT JOIN (SELECT target_id, MAX(visited_at) as visited_at FROM recent_visits " +
+            "WHERE user_id = ? AND target_type = 'project' GROUP BY target_id) rv ON rv.target_id = p.id " +
+            "WHERE (p.archived IS NULL OR p.archived = FALSE) " +
+            "ORDER BY CASE WHEN rv.visited_at IS NULL THEN 1 ELSE 0 END, rv.visited_at DESC, p.name ASC",
+            (rs, i) -> {
+                Map<String, Object> m = new HashMap<>();
+                m.put("id", rs.getLong("id"));
+                m.put("name", rs.getString("name"));
+                m.put("description", rs.getString("description"));
+                m.put("template", rs.getString("template"));
+                java.sql.Timestamp ts = rs.getTimestamp("lastVisitedAt");
+                if (ts != null) m.put("lastVisitedAt", ts.toString());
+                Project p = projectMapper.selectById(rs.getLong("id"));
+                if (p != null) {
+                    m.put("boards", toProjectMap(p, userId).get("boards"));
+                }
+                return m;
+            }, userId, userId);
     }
 
     public List<Map<String, Object>> listArchived(Long userId) {
@@ -123,6 +132,7 @@ public class ProjectService {
             jdbcTemplate.update("DELETE FROM cards WHERE board_id = ?", b.getId());
             jdbcTemplate.update("DELETE FROM board_columns WHERE board_id = ?", b.getId());
             jdbcTemplate.update("DELETE FROM swimlanes WHERE board_id = ?", b.getId());
+            jdbcTemplate.update("DELETE FROM board_members WHERE board_id = ?", b.getId());
             jdbcTemplate.update("DELETE FROM burndown_snapshots WHERE board_id = ?", b.getId());
             jdbcTemplate.update("DELETE FROM activity_logs WHERE board_id = ?", b.getId());
             boardMapper.deleteById(b.getId());

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { Board, CardItem } from '../types/board';
 
 interface UIState {
@@ -16,20 +17,28 @@ interface UIState {
   setLanguage: (lang: 'zh-CN' | 'en-US') => void;
 }
 
-export const useUIStore = create<UIState>((set) => ({
-  sidebarCollapsed: false,
-  selectedCardId: null,
-  cardDrawerOpen: false,
-  sprintPlanOpen: false,
-  milestonePlanOpen: false,
-  language: 'zh-CN',
-  toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
-  openCardDrawer: (cardId) => set({ selectedCardId: cardId, cardDrawerOpen: true }),
-  closeCardDrawer: () => set({ selectedCardId: null, cardDrawerOpen: false }),
-  setSprintPlanOpen: (open) => set({ sprintPlanOpen: open }),
-  setMilestonePlanOpen: (open) => set({ milestonePlanOpen: open }),
-  setLanguage: (language) => set({ language }),
-}));
+export const useUIStore = create<UIState>()(
+  persist(
+    (set) => ({
+      sidebarCollapsed: false,
+      selectedCardId: null,
+      cardDrawerOpen: false,
+      sprintPlanOpen: false,
+      milestonePlanOpen: false,
+      language: 'zh-CN',
+      toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+      openCardDrawer: (cardId) => set({ selectedCardId: cardId, cardDrawerOpen: true }),
+      closeCardDrawer: () => set({ selectedCardId: null, cardDrawerOpen: false }),
+      setSprintPlanOpen: (open) => set({ sprintPlanOpen: open }),
+      setMilestonePlanOpen: (open) => set({ milestonePlanOpen: open }),
+      setLanguage: (language) => set({ language }),
+    }),
+    {
+      name: 'scrum-ui',
+      partialize: (s) => ({ sidebarCollapsed: s.sidebarCollapsed, language: s.language }),
+    },
+  ),
+);
 
 interface BoardState {
   board: Board | null;
@@ -50,7 +59,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     const board = get().board;
     if (!board) return;
     const cards = board.cards.map((c) =>
-      c.id === cardId ? { ...c, columnId, swimlaneId: swimlaneId ?? c.swimlaneId, sortOrder } : c
+      c.id === cardId ? { ...c, columnId, swimlaneId: swimlaneId ?? c.swimlaneId, sortOrder } : c,
     );
     set({ board: { ...board, cards } });
   },

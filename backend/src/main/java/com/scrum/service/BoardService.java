@@ -151,6 +151,11 @@ public class BoardService {
 
     @Transactional
     public Map<String, Object> createBoard(Long projectId, String name, String type, String template) {
+        return createBoard(projectId, name, type, template, false);
+    }
+
+    @Transactional
+    public Map<String, Object> createBoard(Long projectId, String name, String type, String template, boolean addProjectMembers) {
         if (!StringUtils.hasText(name)) throw new IllegalArgumentException("看板名称不能为空");
         Board board = new Board();
         board.setName(name);
@@ -168,6 +173,15 @@ public class BoardService {
             col.setName(columns[i]);
             col.setSortOrder(i);
             columnMapper.insert(col);
+        }
+
+        if (addProjectMembers) {
+            jdbcTemplate.update(
+                "INSERT INTO board_members (board_id, user_id, role) " +
+                "SELECT ?, pm.user_id, CASE WHEN pm.role = 'OWNER' THEN 'ADMIN' ELSE pm.role END " +
+                "FROM project_members pm WHERE pm.project_id = ? " +
+                "AND NOT EXISTS (SELECT 1 FROM board_members bm WHERE bm.board_id = ? AND bm.user_id = pm.user_id)",
+                board.getId(), projectId, board.getId());
         }
 
         Map<String, Object> result = new HashMap<>();
@@ -268,6 +282,7 @@ public class BoardService {
         jdbcTemplate.update("DELETE FROM board_columns WHERE board_id = ?", boardId);
         jdbcTemplate.update("DELETE FROM swimlanes WHERE board_id = ?", boardId);
         jdbcTemplate.update("DELETE FROM user_board_orders WHERE board_id = ?", boardId);
+        jdbcTemplate.update("DELETE FROM board_members WHERE board_id = ?", boardId);
         jdbcTemplate.update("DELETE FROM activity_logs WHERE board_id = ?", boardId);
         boardMapper.deleteById(boardId);
     }

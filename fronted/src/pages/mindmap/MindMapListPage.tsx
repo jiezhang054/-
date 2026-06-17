@@ -97,6 +97,8 @@ export function MindMapListPage() {
       <div style={{ marginTop: 24 }}>
         <Link to="/my/boards/archived">查看已归档看板</Link>
         <span style={{ margin: '0 12px', color: '#d9d9d9' }}>|</span>
+        <Link to="/my/mindmaps/archived">查看已归档脑图</Link>
+        <span style={{ margin: '0 12px', color: '#d9d9d9' }}>|</span>
         <Link to="/my/projects/archived">查看已归档项目</Link>
       </div>
       <CreateMindmapModal open={modalOpen} onClose={() => setModalOpen(false)} onCreated={(id) => navigate(`/mindmap/${id}`)} />

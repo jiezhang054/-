@@ -143,3 +143,11 @@ CREATE TABLE IF NOT EXISTS user_board_orders (
     sort_order INT NOT NULL DEFAULT 0,
     UNIQUE(user_id, board_id)
 );
+
+CREATE TABLE IF NOT EXISTS board_members (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    board_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    role VARCHAR(16) NOT NULL DEFAULT 'MEMBER',
+    UNIQUE(board_id, user_id)
+);

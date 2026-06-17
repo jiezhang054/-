@@ -189,7 +189,7 @@ export function MyBoardsPage() {
         <Link to="/my/projects/archived">查看已归档项目</Link>
       </div>
 
-      <CreateBoardModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={() => { invalidate(); setCreateOpen(false); }} />
+      <CreateBoardModal open={createOpen} onClose={() => setCreateOpen(false)} allowNoProject onCreated={() => { invalidate(); setCreateOpen(false); }} />
 
       <Modal title="重命名看板" open={renameId !== null} onCancel={() => setRenameId(null)}
         onOk={() => renameId && myApi.renameBoard(renameId, renameName).then(() => {

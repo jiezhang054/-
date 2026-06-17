@@ -114,7 +114,8 @@ public class GlobalController {
         String name = (String) body.get("name");
         String type = body.get("type") != null ? body.get("type").toString() : "NORMAL";
         String template = body.get("template") != null ? body.get("template").toString() : type;
-        return ApiResponse.ok(boardService.createBoard(projectId, name, type, template));
+        boolean addMembers = Boolean.TRUE.equals(body.get("addProjectMembers"));
+        return ApiResponse.ok(boardService.createBoard(projectId, name, type, template, addMembers));
     }
 
     @GetMapping("/navigation")
@@ -173,6 +174,14 @@ public class GlobalController {
         Long projectId = body.get("projectId") != null ? Long.valueOf(body.get("projectId").toString()) : null;
         return ApiResponse.ok(mindmapService.create(userId,
             (String) body.get("name"), projectId, (String) body.get("content")));
+    }
+
+    @PostMapping("/mindmaps/import")
+    public ApiResponse<Map<String, Object>> importMindmap(Authentication auth,
+            @RequestParam String name,
+            @RequestParam(required = false) Long projectId,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) throws java.io.IOException {
+        return ApiResponse.ok(mindmapService.importFile((Long) auth.getPrincipal(), name, projectId, file));
     }
 
     @GetMapping("/workspace/dashboard")
@@ -249,8 +258,10 @@ public class GlobalController {
     @PostMapping("/my/boards")
     public ApiResponse<Map<String, Object>> createMyBoard(Authentication auth, @RequestBody Map<String, Object> body) {
         Long projectId = body.get("projectId") != null ? Long.valueOf(body.get("projectId").toString()) : null;
+        boolean addMembers = Boolean.TRUE.equals(body.get("addProjectMembers"));
         return ApiResponse.ok(myBoardsService.createBoard((Long) auth.getPrincipal(),
-            (String) body.get("name"), body.get("template") != null ? body.get("template").toString() : "NORMAL", projectId));
+            (String) body.get("name"), body.get("template") != null ? body.get("template").toString() : "NORMAL",
+            projectId, addMembers));
     }
 
     @PatchMapping("/boards/{boardId}")
@@ -308,6 +319,12 @@ public class GlobalController {
     @PostMapping("/mindmaps/{id}/archive")
     public ApiResponse<Void> archiveMindmap(@PathVariable Long id, Authentication auth) {
         mindmapService.archive(id, (Long) auth.getPrincipal());
+        return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/mindmaps/{id}/restore")
+    public ApiResponse<Void> restoreMindmap(@PathVariable Long id, Authentication auth) {
+        mindmapService.restore(id, (Long) auth.getPrincipal());
         return ApiResponse.ok(null);
     }
 

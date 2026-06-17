@@ -107,13 +107,19 @@ public class MyBoardsService {
     }
 
     @Transactional
-    public Map<String, Object> createBoard(Long userId, String name, String template, Long projectId) {
+    public Map<String, Object> createBoard(Long userId, String name, String template, Long projectId, boolean addProjectMembers) {
         Long pid = projectId;
         if (pid == null) pid = ensurePersonalProject(userId);
         ensureProjectMember(pid, userId);
         return boardService.createBoard(pid, name,
             template != null ? template : "NORMAL",
-            template != null ? template : "NORMAL");
+            template != null ? template : "NORMAL",
+            addProjectMembers);
+    }
+
+    @Transactional
+    public Map<String, Object> createBoard(Long userId, String name, String template, Long projectId) {
+        return createBoard(userId, name, template, projectId, false);
     }
 
     private Long ensurePersonalProject(Long userId) {

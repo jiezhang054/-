@@ -19,7 +19,7 @@ export const myApi = {
   reorderBoards: (boardIds: number[]) =>
     apiClient.put('/my/boards/order', { boardIds }),
 
-  createBoard: (data: { name: string; template?: string; projectId?: number }) =>
+  createBoard: (data: { name: string; template?: string; projectId?: number; addProjectMembers?: boolean }) =>
     apiClient.post<ApiResponse<{ id: number; name: string }>>('/my/boards', data).then((r) => r.data.data),
 
   renameBoard: (boardId: number, name: string) =>
@@ -53,6 +53,13 @@ export const myApi = {
     apiClient.post<ApiResponse<{ id: number; name: string }>>(`/mindmaps/${id}/copy`).then((r) => r.data.data),
 
   deleteMindmap: (id: number) => apiClient.delete(`/mindmaps/${id}`),
+
+  restoreMindmap: (id: number) => apiClient.post(`/mindmaps/${id}/restore`),
+
+  importMindmap: (formData: FormData) =>
+    apiClient.post<ApiResponse<{ id: number; name: string }>>('/mindmaps/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((r) => r.data.data),
 
   exportMindmap: (id: number) =>
     apiClient.get<ApiResponse<{ id: number; name: string; content?: string }>>(`/mindmaps/${id}`)

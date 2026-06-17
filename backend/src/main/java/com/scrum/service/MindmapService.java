@@ -1,15 +1,24 @@
 package com.scrum.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @Service
 public class MindmapService {
     @Autowired private JdbcTemplate jdbcTemplate;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<Map<String, Object>> listForUser(Long userId, Long projectId, String sortBy, String sortDir) {
         StringBuilder sql = new StringBuilder(
@@ -95,6 +104,87 @@ public class MindmapService {
             "SELECT m.id, m.name, p.name as projectName FROM mindmaps m " +
             "LEFT JOIN projects p ON m.project_id = p.id " +
             "WHERE m.owner_id = ? AND m.archived = TRUE ORDER BY m.updated_at DESC", userId);
+    }
+
+    @Transactional
+    public void restore(Long id, Long userId) {
+        ensureOwner(id, userId);
+        jdbcTemplate.update("UPDATE mindmaps SET archived = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = ?", id);
+    }
+
+    public Map<String, Object> importFile(Long userId, String name, Long projectId, MultipartFile file) throws IOException {
+        if (!StringUtils.hasText(name)) throw new IllegalArgumentException("脑图名称不能为空");
+        String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+        String content;
+        if (filename.endsWith(".xmind")) {
+            content = convertXmindToContent(file.getInputStream());
+        } else {
+            content = new String(file.getBytes(), StandardCharsets.UTF_8);
+            normalizeMindmapContent(content);
+        }
+        return create(userId, name, projectId, content);
+    }
+
+    private void normalizeMindmapContent(String content) {
+        try {
+            JsonNode node = objectMapper.readTree(content);
+            if (!node.has("nodes")) throw new IllegalArgumentException("JSON 需包含 nodes 字段");
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("无效的 JSON 格式");
+        }
+    }
+
+    private String convertXmindToContent(InputStream in) throws IOException {
+        try (ZipInputStream zip = new ZipInputStream(in)) {
+            ZipEntry entry;
+            while ((entry = zip.getNextEntry()) != null) {
+                if ("content.json".equals(entry.getName())) {
+                    String json = new String(zip.readAllBytes(), StandardCharsets.UTF_8);
+                    return xmindJsonToReactFlow(json);
+                }
+            }
+        }
+        throw new IllegalArgumentException("无效的 XMind 文件（缺少 content.json）");
+    }
+
+    private String xmindJsonToReactFlow(String xmindJson) throws IOException {
+        JsonNode sheets = objectMapper.readTree(xmindJson);
+        if (!sheets.isArray() || sheets.isEmpty()) throw new IllegalArgumentException("XMind 内容为空");
+        JsonNode root = sheets.get(0).get("rootTopic");
+        if (root == null) throw new IllegalArgumentException("XMind 缺少根节点");
+
+        List<Map<String, Object>> nodes = new ArrayList<>();
+        List<Map<String, Object>> edges = new ArrayList<>();
+        int[] y = {0};
+        buildTopicNodes(root, null, nodes, edges, 0, y);
+        Map<String, Object> result = new HashMap<>();
+        result.put("nodes", nodes);
+        result.put("edges", edges);
+        return objectMapper.writeValueAsString(result);
+    }
+
+    private void buildTopicNodes(JsonNode topic, String parentId, List<Map<String, Object>> nodes,
+                                 List<Map<String, Object>> edges, int depth, int[] y) {
+        String id = topic.has("id") ? topic.get("id").asText() : UUID.randomUUID().toString();
+        String title = topic.has("title") ? topic.get("title").asText() : "节点";
+        Map<String, Object> node = new HashMap<>();
+        node.put("id", id);
+        node.put("position", Map.of("x", depth * 200, "y", y[0] * 80));
+        node.put("data", Map.of("label", title));
+        if (parentId == null) node.put("type", "input");
+        nodes.add(node);
+        y[0]++;
+        if (parentId != null) {
+            edges.add(Map.of("id", "e-" + parentId + "-" + id, "source", parentId, "target", id));
+        }
+        JsonNode children = topic.path("children").path("attached");
+        if (children.isArray()) {
+            for (JsonNode child : children) {
+                buildTopicNodes(child, id, nodes, edges, depth + 1, y);
+            }
+        }
     }
 
     private void ensureAccess(Long mindmapId, Long userId) {
