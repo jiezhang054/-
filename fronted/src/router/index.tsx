@@ -14,6 +14,9 @@ import { BoardTimelinePage } from '../pages/board/BoardTimelinePage';
 import { BoardChartsPage } from '../pages/board/BoardChartsPage';
 import { DemoIndexPage } from '../pages/demo/DemoIndexPage';
 import { MindMapPage } from '../pages/mindmap/MindMapPage';
+import { MyBoardsPage } from '../pages/my/MyBoardsPage';
+import { ArchivedBoardsPage } from '../pages/my/ArchivedBoardsPage';
+import { ArchivedProjectsPage } from '../pages/my/ArchivedProjectsPage';
 import { MindMapListPage } from '../pages/mindmap/MindMapListPage';
 import { ProfilePage } from '../pages/settings/ProfilePage';
 
@@ -38,7 +41,9 @@ export const router = createBrowserRouter([
       { path: 'board/:boardId/stats', element: <BoardStatsPage /> },
       { path: 'board/:boardId/timeline', element: <BoardTimelinePage /> },
       { path: 'board/:boardId/charts', element: <BoardChartsPage /> },
-      { path: 'my/boards', element: <ProjectPage /> },
+      { path: 'my/boards', element: <MyBoardsPage /> },
+      { path: 'my/boards/archived', element: <ArchivedBoardsPage /> },
+      { path: 'my/projects/archived', element: <ArchivedProjectsPage /> },
       { path: 'my/mindmaps', element: <MindMapListPage /> },
       { path: 'mindmap/:mindmapId', element: <MindMapPage /> },
     ],

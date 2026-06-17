@@ -185,7 +185,98 @@ public class BoardService {
             case "SPRINT" -> new String[]{"待办", "进行中", "测试中", "已完成"};
             case "DEFECT" -> new String[]{"新建", "处理中", "待验证", "已关闭"};
             case "BACKLOG" -> new String[]{"用户故事池", "待梳理", "梳理完成", "实现中", "已完成"};
+            case "TEST_CASE" -> new String[]{"待编写", "编写中", "待评审", "已通过"};
+            case "OKR" -> new String[]{"目标池", "进行中", "已完成", "已取消"};
+            case "EVENT" -> new String[]{"策划中", "筹备中", "进行中", "已结束"};
+            case "STORY_MAP" -> new String[]{"活动", "用户故事", "待开发", "已完成"};
             default -> new String[]{"待办", "进行中", "已完成"};
         };
+    }
+
+    @Transactional
+    public void renameBoard(Long boardId, String name) {
+        if (!StringUtils.hasText(name)) throw new IllegalArgumentException("看板名称不能为空");
+        Board board = boardMapper.selectById(boardId);
+        if (board == null) throw new IllegalArgumentException("看板不存在");
+        board.setName(name);
+        boardMapper.updateById(board);
+    }
+
+    @Transactional
+    public void moveBoard(Long boardId, Long projectId) {
+        Board board = boardMapper.selectById(boardId);
+        if (board == null) throw new IllegalArgumentException("看板不存在");
+        Project project = projectMapper.selectById(projectId);
+        if (project == null) throw new IllegalArgumentException("项目不存在");
+        board.setProjectId(projectId);
+        boardMapper.updateById(board);
+    }
+
+    @Transactional
+    public Map<String, Object> copyBoard(Long boardId) {
+        Board source = boardMapper.selectById(boardId);
+        if (source == null) throw new IllegalArgumentException("看板不存在");
+
+        Board copy = new Board();
+        copy.setName(source.getName() + " (副本)");
+        copy.setType(source.getType());
+        copy.setProjectId(source.getProjectId());
+        copy.setSwimlanesEnabled(source.getSwimlanesEnabled());
+        copy.setVisibility(source.getVisibility());
+        copy.setArchived(false);
+        boardMapper.insert(copy);
+
+        Map<Long, Long> columnMap = new HashMap<>();
+        List<BoardColumn> columns = columnMapper.selectList(
+            new LambdaQueryWrapper<BoardColumn>().eq(BoardColumn::getBoardId, boardId).orderByAsc(BoardColumn::getSortOrder));
+        for (BoardColumn col : columns) {
+            BoardColumn nc = new BoardColumn();
+            nc.setBoardId(copy.getId());
+            nc.setName(col.getName());
+            nc.setSortOrder(col.getSortOrder());
+            columnMapper.insert(nc);
+            columnMap.put(col.getId(), nc.getId());
+        }
+
+        List<Card> cards = cardMapper.selectList(
+            new LambdaQueryWrapper<Card>().eq(Card::getBoardId, boardId).eq(Card::getDeleted, false));
+        for (Card c : cards) {
+            Card nc = new Card();
+            nc.setBoardId(copy.getId());
+            nc.setColumnId(columnMap.getOrDefault(c.getColumnId(), c.getColumnId()));
+            nc.setTitle(c.getTitle());
+            nc.setDescription(c.getDescription());
+            nc.setType(c.getType());
+            nc.setSortOrder(c.getSortOrder());
+            nc.setWorkload(c.getWorkload());
+            nc.setDeleted(false);
+            nc.setVersion(1);
+            cardMapper.insert(nc);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", copy.getId());
+        result.put("name", copy.getName());
+        return result;
+    }
+
+    @Transactional
+    public void deleteBoard(Long boardId) {
+        jdbcTemplate.update("DELETE FROM starred_boards WHERE board_id = ?", boardId);
+        jdbcTemplate.update("DELETE FROM card_members WHERE card_id IN (SELECT id FROM cards WHERE board_id = ?)", boardId);
+        jdbcTemplate.update("DELETE FROM cards WHERE board_id = ?", boardId);
+        jdbcTemplate.update("DELETE FROM board_columns WHERE board_id = ?", boardId);
+        jdbcTemplate.update("DELETE FROM swimlanes WHERE board_id = ?", boardId);
+        jdbcTemplate.update("DELETE FROM user_board_orders WHERE board_id = ?", boardId);
+        jdbcTemplate.update("DELETE FROM activity_logs WHERE board_id = ?", boardId);
+        boardMapper.deleteById(boardId);
+    }
+
+    @Transactional
+    public void restoreBoard(Long boardId) {
+        Board board = boardMapper.selectById(boardId);
+        if (board == null) throw new IllegalArgumentException("看板不存在");
+        board.setArchived(false);
+        boardMapper.updateById(board);
     }
 }

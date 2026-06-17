@@ -17,6 +17,7 @@ public class GlobalController {
     @Autowired private NotificationService notificationService;
     @Autowired private MindmapService mindmapService;
     @Autowired private WorkspaceService workspaceService;
+    @Autowired private MyBoardsService myBoardsService;
 
     @GetMapping("/projects")
     public ApiResponse<List<Map<String, Object>>> projects(Authentication auth) {
@@ -154,8 +155,16 @@ public class GlobalController {
     }
 
     @GetMapping("/mindmaps")
-    public ApiResponse<List<Map<String, Object>>> mindmaps(Authentication auth) {
-        return ApiResponse.ok(mindmapService.listForUser((Long) auth.getPrincipal()));
+    public ApiResponse<List<Map<String, Object>>> mindmaps(Authentication auth,
+            @RequestParam(required = false) Long projectId,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortDir) {
+        return ApiResponse.ok(mindmapService.listForUser((Long) auth.getPrincipal(), projectId, sortBy, sortDir));
+    }
+
+    @GetMapping("/mindmaps/archived")
+    public ApiResponse<List<Map<String, Object>>> archivedMindmaps(Authentication auth) {
+        return ApiResponse.ok(mindmapService.listArchived((Long) auth.getPrincipal()));
     }
 
     @PostMapping("/mindmaps")
@@ -214,5 +223,102 @@ public class GlobalController {
             @RequestBody Map<String, Object> body, Authentication auth) {
         Long columnId = Long.valueOf(body.get("columnId").toString());
         return ApiResponse.ok(workspaceService.quickMoveCard((Long) auth.getPrincipal(), cardId, columnId));
+    }
+
+    @GetMapping("/my/boards")
+    public ApiResponse<List<Map<String, Object>>> myBoards(Authentication auth,
+            @RequestParam(required = false) String filter,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortDir) {
+        return ApiResponse.ok(myBoardsService.listBoards((Long) auth.getPrincipal(), filter, sortBy, sortDir));
+    }
+
+    @GetMapping("/my/boards/archived")
+    public ApiResponse<List<Map<String, Object>>> archivedBoards(Authentication auth) {
+        return ApiResponse.ok(myBoardsService.listArchivedBoards((Long) auth.getPrincipal()));
+    }
+
+    @PutMapping("/my/boards/order")
+    public ApiResponse<Void> myBoardsOrder(Authentication auth, @RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        List<Number> ids = (List<Number>) body.get("boardIds");
+        myBoardsService.reorderBoards((Long) auth.getPrincipal(), ids.stream().map(Number::longValue).toList());
+        return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/my/boards")
+    public ApiResponse<Map<String, Object>> createMyBoard(Authentication auth, @RequestBody Map<String, Object> body) {
+        Long projectId = body.get("projectId") != null ? Long.valueOf(body.get("projectId").toString()) : null;
+        return ApiResponse.ok(myBoardsService.createBoard((Long) auth.getPrincipal(),
+            (String) body.get("name"), body.get("template") != null ? body.get("template").toString() : "NORMAL", projectId));
+    }
+
+    @PatchMapping("/boards/{boardId}")
+    public ApiResponse<Void> renameBoard(@PathVariable Long boardId, Authentication auth,
+            @RequestBody Map<String, String> body) {
+        myBoardsService.renameBoard((Long) auth.getPrincipal(), boardId, body.get("name"));
+        return ApiResponse.ok(null);
+    }
+
+    @PatchMapping("/boards/{boardId}/project")
+    public ApiResponse<Void> moveBoard(@PathVariable Long boardId, Authentication auth,
+            @RequestBody Map<String, Object> body) {
+        Long projectId = Long.valueOf(body.get("projectId").toString());
+        myBoardsService.moveBoard((Long) auth.getPrincipal(), boardId, projectId);
+        return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/boards/{boardId}/copy")
+    public ApiResponse<Map<String, Object>> copyBoard(@PathVariable Long boardId, Authentication auth) {
+        return ApiResponse.ok(myBoardsService.copyBoard((Long) auth.getPrincipal(), boardId));
+    }
+
+    @DeleteMapping("/boards/{boardId}")
+    public ApiResponse<Void> deleteBoard(@PathVariable Long boardId, Authentication auth) {
+        myBoardsService.deleteBoard((Long) auth.getPrincipal(), boardId);
+        return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/boards/{boardId}/restore")
+    public ApiResponse<Void> restoreBoard(@PathVariable Long boardId, Authentication auth) {
+        myBoardsService.restoreBoard((Long) auth.getPrincipal(), boardId);
+        return ApiResponse.ok(null);
+    }
+
+    @GetMapping("/mindmaps/{id}")
+    public ApiResponse<Map<String, Object>> getMindmap(@PathVariable Long id, Authentication auth) {
+        return ApiResponse.ok(mindmapService.getById(id, (Long) auth.getPrincipal()));
+    }
+
+    @PatchMapping("/mindmaps/{id}")
+    public ApiResponse<Void> renameMindmap(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, String> body) {
+        mindmapService.rename(id, (Long) auth.getPrincipal(), body.get("name"));
+        return ApiResponse.ok(null);
+    }
+
+    @PatchMapping("/mindmaps/{id}/project")
+    public ApiResponse<Void> moveMindmap(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, Object> body) {
+        Long projectId = body.get("projectId") != null ? Long.valueOf(body.get("projectId").toString()) : null;
+        mindmapService.move(id, (Long) auth.getPrincipal(), projectId);
+        return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/mindmaps/{id}/archive")
+    public ApiResponse<Void> archiveMindmap(@PathVariable Long id, Authentication auth) {
+        mindmapService.archive(id, (Long) auth.getPrincipal());
+        return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/mindmaps/{id}/copy")
+    public ApiResponse<Map<String, Object>> copyMindmap(@PathVariable Long id, Authentication auth) {
+        return ApiResponse.ok(mindmapService.copy(id, (Long) auth.getPrincipal()));
+    }
+
+    @DeleteMapping("/mindmaps/{id}")
+    public ApiResponse<Void> deleteMindmap(@PathVariable Long id, Authentication auth) {
+        mindmapService.delete(id, (Long) auth.getPrincipal());
+        return ApiResponse.ok(null);
     }
 }

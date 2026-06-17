@@ -135,3 +135,11 @@ CREATE TABLE IF NOT EXISTS mindmaps (
     archived BOOLEAN DEFAULT FALSE,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS user_board_orders (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    board_id BIGINT NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    UNIQUE(user_id, board_id)
+);

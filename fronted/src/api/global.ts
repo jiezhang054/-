@@ -60,8 +60,8 @@ export const globalApi = {
   createMindmap: (data: { name: string; projectId?: number; content?: string }) =>
     apiClient.post<ApiResponse<{ id: number; name: string }>>('/mindmaps', data).then((r) => r.data.data),
 
-  listMindmaps: () =>
-    apiClient.get<ApiResponse<MindmapSummary[]>>('/mindmaps').then((r) => r.data.data),
+  listMindmaps: (params?: { projectId?: number; sortBy?: string; sortDir?: string }) =>
+    apiClient.get<ApiResponse<MindmapSummary[]>>('/mindmaps', { params }).then((r) => r.data.data),
 };
 
 export const projectsApi = {
