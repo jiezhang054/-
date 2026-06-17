@@ -61,6 +61,13 @@ export const myApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }).then((r) => r.data.data),
 
+  updateContent: (id: number, content: string) =>
+    apiClient.patch(`/mindmaps/${id}/content`, { content }),
+
+  getMindmap: (id: number) =>
+    apiClient.get<ApiResponse<{ id: number; name: string; content?: string; projectId?: number }>>(`/mindmaps/${id}`)
+      .then((r) => r.data.data),
+
   exportMindmap: (id: number) =>
     apiClient.get<ApiResponse<{ id: number; name: string; content?: string }>>(`/mindmaps/${id}`)
       .then((r) => r.data.data),

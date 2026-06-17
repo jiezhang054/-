@@ -1,36 +1,82 @@
-import { useCallback, useState } from 'react';
-import ReactFlow, { addEdge, Background, Controls, MiniMap, useNodesState, useEdgesState, type Connection } from 'reactflow';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import ReactFlow, { addEdge, Background, Controls, MiniMap, useNodesState, useEdgesState, type Connection, type Node, type Edge } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Button, Space, message } from 'antd';
-import { DownloadOutlined, UploadOutlined } from '@ant-design/icons';
+import { Button, Space, message, Spin, Typography } from 'antd';
+import { DownloadOutlined, UploadOutlined, SaveOutlined } from '@ant-design/icons';
+import { myApi } from '../../api/my';
 
-const initialNodes = [
-  { id: '1', position: { x: 250, y: 0 }, data: { label: '电商重构' }, type: 'input' },
-  { id: '2', position: { x: 100, y: 100 }, data: { label: '用户中心' } },
-  { id: '3', position: { x: 400, y: 100 }, data: { label: '交易系统' } },
-  { id: '4', position: { x: 100, y: 200 }, data: { label: '登录功能' } },
-  { id: '5', position: { x: 400, y: 200 }, data: { label: '支付模块' } },
-];
-const initialEdges = [
-  { id: 'e1-2', source: '1', target: '2' },
-  { id: 'e1-3', source: '1', target: '3' },
-  { id: 'e2-4', source: '2', target: '4' },
-  { id: 'e3-5', source: '3', target: '5' },
-];
+const { Title } = Typography;
+
+type MindNode = Node<{ label: string }>;
+
+function parseContent(content?: string): { nodes: MindNode[]; edges: Edge[] } {
+  if (!content) return { nodes: [], edges: [] };
+  try {
+    const data = JSON.parse(content);
+    return {
+      nodes: (data.nodes ?? []).map((n: MindNode) => ({
+        ...n,
+        data: { label: String((n.data as { label?: string })?.label ?? '') },
+      })),
+      edges: data.edges ?? [],
+    };
+  } catch {
+    return { nodes: [], edges: [] };
+  }
+}
 
 export function MindMapPage() {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const { mindmapId } = useParams();
+  const id = Number(mindmapId);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [name, setName] = useState('');
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['mindmap', id],
+    queryFn: () => myApi.getMindmap(id),
+    enabled: !!id,
+  });
+
+  const [nodes, setNodes, onNodesChange] = useNodesState<{ label: string }>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+  useEffect(() => {
+    if (data) {
+      setName(data.name);
+      const parsed = parseContent(data.content);
+      if (parsed.nodes.length) {
+        setNodes(parsed.nodes);
+        setEdges(parsed.edges);
+      } else {
+        setNodes([
+          { id: '1', position: { x: 250, y: 0 }, data: { label: data.name }, type: 'input' },
+        ]);
+        setEdges([]);
+      }
+    }
+  }, [data, setNodes, setEdges]);
+
+  const persist = useCallback((n: MindNode[], e: Edge[]) => {
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      myApi.updateContent(id, JSON.stringify({ nodes: n, edges: e })).catch(() => {});
+    }, 800);
+  }, [id]);
+
+  useEffect(() => {
+    if (nodes.length && data) persist(nodes, edges);
+  }, [nodes, edges, data, persist]);
 
   const onConnect = useCallback((params: Connection) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
   const exportJson = () => {
-    const data = { nodes, edges };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ nodes, edges }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'mindmap.json';
+    a.download = `${name || 'mindmap'}.json`;
     a.click();
     message.success('已导出 JSON');
   };
@@ -45,9 +91,9 @@ export function MindMapPage() {
       const reader = new FileReader();
       reader.onload = (ev) => {
         try {
-          const data = JSON.parse(ev.target?.result as string);
-          if (data.nodes) setNodes(data.nodes);
-          if (data.edges) setEdges(data.edges);
+          const parsed = parseContent(ev.target?.result as string);
+          setNodes(parsed.nodes);
+          setEdges(parsed.edges);
           message.success('导入成功');
         } catch { message.error('JSON 格式错误'); }
       };
@@ -56,19 +102,28 @@ export function MindMapPage() {
     input.click();
   };
 
+  const saveNow = async () => {
+    await myApi.updateContent(id, JSON.stringify({ nodes, edges }));
+    message.success('已保存');
+  };
+
+  if (isLoading) return <Spin style={{ display: 'block', margin: '100px auto' }} />;
+
   return (
-    <div style={{ height: 'calc(100vh - 56px)' }}>
-      <div style={{ padding: '8px 16px', background: '#fff', borderBottom: '1px solid #e8e8e8' }}>
+    <div style={{ height: 'calc(100vh - var(--header-height))', display: 'flex', flexDirection: 'column' }}>
+      <div className="mindmap-toolbar">
+        <Title level={5} style={{ margin: 0 }}>{name}</Title>
         <Space>
+          <Button icon={<SaveOutlined />} type="primary" onClick={saveNow}>保存</Button>
           <Button icon={<DownloadOutlined />} onClick={exportJson}>导出 JSON</Button>
           <Button icon={<UploadOutlined />} onClick={importJson}>导入 JSON</Button>
         </Space>
       </div>
-      <div style={{ height: 'calc(100% - 48px)' }}>
+      <div style={{ flex: 1 }}>
         <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} fitView>
-          <Background />
+          <Background color="#e8e8e8" gap={16} />
           <Controls />
-          <MiniMap />
+          <MiniMap nodeColor="#1677ff" />
         </ReactFlow>
       </div>
     </div>

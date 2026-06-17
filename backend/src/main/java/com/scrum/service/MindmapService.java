@@ -112,6 +112,13 @@ public class MindmapService {
         jdbcTemplate.update("UPDATE mindmaps SET archived = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = ?", id);
     }
 
+    @Transactional
+    public void updateContent(Long id, Long userId, String content) {
+        ensureAccess(id, userId);
+        jdbcTemplate.update("UPDATE mindmaps SET content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            content != null ? content : "{\"nodes\":[],\"edges\":[]}", id);
+    }
+
     public Map<String, Object> importFile(Long userId, String name, Long projectId, MultipartFile file) throws IOException {
         if (!StringUtils.hasText(name)) throw new IllegalArgumentException("脑图名称不能为空");
         String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";

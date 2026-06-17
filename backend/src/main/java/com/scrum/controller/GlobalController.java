@@ -308,6 +308,13 @@ public class GlobalController {
         return ApiResponse.ok(null);
     }
 
+    @PatchMapping("/mindmaps/{id}/content")
+    public ApiResponse<Void> updateMindmapContent(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, String> body) {
+        mindmapService.updateContent(id, (Long) auth.getPrincipal(), body.get("content"));
+        return ApiResponse.ok(null);
+    }
+
     @PatchMapping("/mindmaps/{id}/project")
     public ApiResponse<Void> moveMindmap(@PathVariable Long id, Authentication auth,
             @RequestBody Map<String, Object> body) {
