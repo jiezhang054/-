@@ -206,6 +206,44 @@ Test-Api 'M6 board labels' {
     if ($null -eq $l.data) { throw 'bad labels' }
 }
 
+Test-Api 'M7 milestone plan' {
+    $body = @{ name = 'integration-milestone'; startDate = '2026-07-01'; endDate = '2026-07-31'; epicIds = @(1) } | ConvertTo-Json
+    $created = Invoke-RestMethod -Uri "$base/boards/1/milestone-plan" -Method POST -Headers $headers -ContentType 'application/json' -Body $body
+    if (-not $created.data.id) { throw 'milestone plan failed' }
+    Invoke-RestMethod -Uri "$base/boards/$($created.data.id)" -Method DELETE -Headers $headers | Out-Null
+}
+
+Test-Api 'M7 card split' {
+    $body = @{ columnId = 301; title = 'split-test-story'; type = 'USER_STORY' } | ConvertTo-Json
+    $created = Invoke-RestMethod -Uri "$base/boards/3/cards" -Method POST -Headers $headers -ContentType 'application/json' -Body $body
+    $cardId = $created.data.id
+    $split = @{ tasks = @(@{ title = 'task-a'; workload = 2 }, @{ title = 'task-b'; workload = 3 }) } | ConvertTo-Json -Depth 5
+    Invoke-RestMethod -Uri "$base/cards/$cardId/split" -Method POST -Headers $headers -ContentType 'application/json' -Body $split | Out-Null
+    Invoke-RestMethod -Uri "$base/cards/$cardId" -Method DELETE -Headers $headers | Out-Null
+}
+
+Test-Api 'M8 burndown' {
+    $body = @{ mode = 'workload'; method = 'cumulative'; workdaysOnly = $true; todoColumnIds = @(301,302); doneColumnIds = @(304) } | ConvertTo-Json
+    $b = Invoke-RestMethod -Uri "$base/boards/3/burndown" -Method POST -Headers $headers -ContentType 'application/json' -Body $body
+    if ($b.data.Count -lt 1) { throw 'no burndown points' }
+}
+
+Test-Api 'M9 mindmap content' {
+    $body = @{ name = 'integration-mindmap-editor'; projectId = 1 } | ConvertTo-Json
+    $created = Invoke-RestMethod -Uri "$base/mindmaps" -Method POST -Headers $headers -ContentType 'application/json' -Body $body
+    $id = $created.data.id
+    $content = @{ content = '{"nodes":[{"id":"1","position":{"x":0,"y":0},"data":{"label":"root"}}],"edges":[]}' } | ConvertTo-Json
+    Invoke-RestMethod -Uri "$base/mindmaps/$id/content" -Method PATCH -Headers $headers -ContentType 'application/json' -Body $content | Out-Null
+    $got = Invoke-RestMethod -Uri "$base/mindmaps/$id" -Headers $headers
+    if (-not $got.data.content) { throw 'content not saved' }
+    Invoke-RestMethod -Uri "$base/mindmaps/$id" -Method DELETE -Headers $headers | Out-Null
+}
+
+Test-Api 'M11 board export json' {
+    $b = Invoke-RestMethod -Uri "$base/boards/3/export/json" -Headers $headers
+    if (-not $b.data.cards) { throw 'export failed' }
+}
+
 Write-Host ''
 Write-Host '========== Integration Test Results =========='
 $results | ForEach-Object { Write-Host $_ }

@@ -11,7 +11,7 @@ import './styles/global.css';
 import './styles/board.css';
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 10000 } },
+  defaultOptions: { queries: { retry: 1, staleTime: 30000, refetchOnWindowFocus: true } },
 });
 
 createRoot(document.getElementById('root')!).render(

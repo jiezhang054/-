@@ -126,3 +126,50 @@
 .board-grid-card:hover {
   box-shadow: var(--shadow-card);
 }
+
+.board-column--add {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 40px;
+  min-width: 200px;
+}
+
+.board-column-header {
+  gap: 4px;
+}
+
+.mindmap-toolbar {
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.field-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.stats-summary {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.page-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--color-text-primary);
+}
