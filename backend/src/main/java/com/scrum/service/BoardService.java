@@ -36,6 +36,7 @@ public class BoardService {
         dto.setSwimlanesEnabled(board.getSwimlanesEnabled());
         dto.setStartDate(board.getStartDate() != null ? board.getStartDate().toString() : null);
         dto.setEndDate(board.getEndDate() != null ? board.getEndDate().toString() : null);
+        dto.setVisibility(board.getVisibility());
 
         if (userId != null) {
             List<Long> starred = jdbcTemplate.queryForList(
@@ -134,6 +135,15 @@ public class BoardService {
         if (updates.containsKey("title")) card.setTitle((String) updates.get("title"));
         if (updates.containsKey("description")) card.setDescription((String) updates.get("description"));
         if (updates.containsKey("workload")) card.setWorkload(Integer.valueOf(updates.get("workload").toString()));
+        if (updates.containsKey("type")) card.setType(updates.get("type").toString());
+        if (updates.containsKey("dueDate")) {
+            String d = updates.get("dueDate") != null ? updates.get("dueDate").toString() : null;
+            card.setDueDate(d != null && !d.isBlank() ? java.time.LocalDate.parse(d) : null);
+        }
+        if (updates.containsKey("startDate")) {
+            String d = updates.get("startDate") != null ? updates.get("startDate").toString() : null;
+            card.setStartDate(d != null && !d.isBlank() ? java.time.LocalDate.parse(d) : null);
+        }
         card.setVersion(card.getVersion() + 1);
         cardMapper.updateById(card);
 

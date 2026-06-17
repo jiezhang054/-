@@ -35,6 +35,7 @@ export function normalizeBoard(data: Partial<Board> & { id: number; name: string
     startDate: data.startDate,
     endDate: data.endDate,
     starred: data.starred,
+    visibility: data.visibility,
     columns: data.columns ?? [],
     swimlanes: data.swimlanes ?? [],
     cards: (data.cards ?? []).map((c) => normalizeCard(c)),

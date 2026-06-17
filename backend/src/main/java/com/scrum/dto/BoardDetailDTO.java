@@ -13,6 +13,7 @@ public class BoardDetailDTO {
     private String startDate;
     private String endDate;
     private Boolean starred;
+    private String visibility;
     private List<ColumnDTO> columns;
     private List<SwimlaneDTO> swimlanes;
     private List<CardDTO> cards;
@@ -37,6 +38,8 @@ public class BoardDetailDTO {
     public void setEndDate(String endDate) { this.endDate = endDate; }
     public Boolean getStarred() { return starred; }
     public void setStarred(Boolean starred) { this.starred = starred; }
+    public String getVisibility() { return visibility; }
+    public void setVisibility(String visibility) { this.visibility = visibility; }
     public List<ColumnDTO> getColumns() { return columns; }
     public void setColumns(List<ColumnDTO> columns) { this.columns = columns; }
     public List<SwimlaneDTO> getSwimlanes() { return swimlanes; }

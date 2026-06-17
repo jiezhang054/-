@@ -1,9 +1,11 @@
+import { useRef, useCallback } from 'react';
 import { Drawer, Input, InputNumber, DatePicker, Checkbox, List, Button, Space, Tag, Divider } from 'antd';
 import { LinkOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { CardItem } from '../../types/board';
 import { CardTypeTag } from '../common/CardTypeTag';
 import { useBoardStore } from '../../stores/useUIStore';
+import { boardsApi } from '../../api/boards';
 
 interface Props {
   card: CardItem | null;
@@ -13,6 +15,15 @@ interface Props {
 
 export function CardDetailDrawer({ card, open, onClose }: Props) {
   const { updateCard } = useBoardStore();
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const persistCard = useCallback((cardId: number, updates: Partial<CardItem>) => {
+    updateCard(cardId, updates);
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      boardsApi.updateCard(cardId, updates).catch(() => {});
+    }, 500);
+  }, [updateCard]);
 
   if (!card) return null;
 
@@ -28,11 +39,19 @@ export function CardDetailDrawer({ card, open, onClose }: Props) {
       </Space>
 
       <div style={{ marginBottom: 16 }}>
+        <div style={{ fontWeight: 500, marginBottom: 8 }}>标题</div>
+        <Input
+          value={card.title}
+          onChange={(e) => persistCard(card.id, { title: e.target.value })}
+        />
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
         <div style={{ fontWeight: 500, marginBottom: 8 }}>描述</div>
         <Input.TextArea
           rows={4}
           value={card.description || ''}
-          onChange={(e) => updateCard(card.id, { description: e.target.value })}
+          onChange={(e) => persistCard(card.id, { description: e.target.value })}
           placeholder="添加描述..."
         />
       </div>
@@ -40,13 +59,13 @@ export function CardDetailDrawer({ card, open, onClose }: Props) {
       <Space style={{ marginBottom: 16 }} size="large">
         <div>
           <div style={{ fontSize: 12, color: '#8f959e' }}>故事点</div>
-          <InputNumber min={0} value={card.workload} onChange={(v) => updateCard(card.id, { workload: v || 0 })} />
+          <InputNumber min={0} value={card.workload} onChange={(v) => persistCard(card.id, { workload: v || 0 })} />
         </div>
         <div>
           <div style={{ fontSize: 12, color: '#8f959e' }}>截止日期</div>
           <DatePicker
             value={card.dueDate ? dayjs(card.dueDate) : null}
-            onChange={(d) => updateCard(card.id, { dueDate: d?.format('YYYY-MM-DD') })}
+            onChange={(d) => persistCard(card.id, { dueDate: d?.format('YYYY-MM-DD') })}
           />
         </div>
       </Space>
@@ -66,7 +85,7 @@ export function CardDetailDrawer({ card, open, onClose }: Props) {
                   const next = checklist.map((c) =>
                     c.id === item.id ? { ...c, done: e.target.checked } : c
                   );
-                  updateCard(card.id, { checklist: next });
+                  persistCard(card.id, { checklist: next });
                 }}
               >
                 {item.text}
@@ -89,10 +108,6 @@ export function CardDetailDrawer({ card, open, onClose }: Props) {
             </List.Item>
           )}
         />
-        <Space.Compact style={{ width: '100%', marginTop: 8 }}>
-          <Input placeholder="写评论..." />
-          <Button type="primary">发送</Button>
-        </Space.Compact>
       </div>
     </Drawer>
   );

@@ -168,6 +168,44 @@ Test-Api 'M4 create board with project members' {
     Invoke-RestMethod -Uri "$base/boards/$($created.data.id)" -Method DELETE -Headers $headers | Out-Null
 }
 
+Test-Api 'M6 board detail' {
+    $b = Invoke-RestMethod -Uri "$base/boards/3" -Headers $headers
+    if (-not $b.data.columns) { throw 'missing columns' }
+    if (-not $b.data.cards) { throw 'missing cards' }
+}
+
+Test-Api 'M6 board members' {
+    $m = Invoke-RestMethod -Uri "$base/boards/3/members" -Headers $headers
+    if ($m.data.Count -lt 1) { throw 'no board members' }
+}
+
+Test-Api 'M6 board activities' {
+    $a = Invoke-RestMethod -Uri "$base/boards/3/activities" -Headers $headers
+    if ($null -eq $a.data) { throw 'bad activities' }
+}
+
+Test-Api 'M6 create and update card' {
+    $body = @{ columnId = 301; title = 'integration-card'; type = 'TASK' } | ConvertTo-Json
+    $created = Invoke-RestMethod -Uri "$base/boards/3/cards" -Method POST -Headers $headers -ContentType 'application/json' -Body $body
+    $cardId = $created.data.id
+    if (-not $cardId) { throw 'card create failed' }
+    $upd = @{ description = 'test desc'; workload = 2 } | ConvertTo-Json
+    Invoke-RestMethod -Uri "$base/cards/$cardId" -Method PUT -Headers $headers -ContentType 'application/json' -Body $upd | Out-Null
+    Invoke-RestMethod -Uri "$base/cards/$cardId" -Method DELETE -Headers $headers | Out-Null
+}
+
+Test-Api 'M6 add column' {
+    $body = @{ name = 'integration-col' } | ConvertTo-Json
+    $col = Invoke-RestMethod -Uri "$base/boards/3/columns" -Method POST -Headers $headers -ContentType 'application/json' -Body $body
+    if (-not $col.data.id) { throw 'column create failed' }
+    Invoke-RestMethod -Uri "$base/columns/$($col.data.id)" -Method DELETE -Headers $headers | Out-Null
+}
+
+Test-Api 'M6 board labels' {
+    $l = Invoke-RestMethod -Uri "$base/boards/3/labels" -Headers $headers
+    if ($null -eq $l.data) { throw 'bad labels' }
+}
+
 Write-Host ''
 Write-Host '========== Integration Test Results =========='
 $results | ForEach-Object { Write-Host $_ }

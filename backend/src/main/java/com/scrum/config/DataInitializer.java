@@ -90,6 +90,17 @@ public class DataInitializer implements CommandLineRunner {
         jdbcTemplate.update("INSERT INTO card_members (card_id, user_id) VALUES (4, ?)", ownerId);
         jdbcTemplate.update("INSERT INTO card_members (card_id, user_id) VALUES (5, ?)", ownerId);
 
+        jdbcTemplate.update("INSERT INTO card_labels (card_id, name, color) VALUES (4, '后端', '#1677ff')");
+        jdbcTemplate.update("INSERT INTO card_labels (card_id, name, color) VALUES (5, '前端', '#52c41a')");
+        jdbcTemplate.update("INSERT INTO card_comments (card_id, user_id, content) VALUES (5, ?, '联调进度如何？')", ownerId);
+
+        for (String[] member : new String[][]{{"zhang", "MEMBER"}, {"yin", "MEMBER"}, {"zhong", "ADMIN"}, {"zang", "MEMBER"}}) {
+            User u = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername, member[0]));
+            if (u != null) {
+                jdbcTemplate.update("INSERT INTO board_members (board_id, user_id, role) VALUES (3, ?, ?)", u.getId(), member[1]);
+            }
+        }
+
         jdbcTemplate.update("INSERT INTO starred_boards (user_id, board_id) VALUES (?, 2)", ownerId);
         jdbcTemplate.update("INSERT INTO starred_boards (user_id, board_id) VALUES (?, 3)", ownerId);
 

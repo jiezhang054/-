@@ -1,12 +1,18 @@
+import { Button, message } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import type { Board, Swimlane } from '../../types/board';
 import { BoardColumnView } from './BoardColumn';
+import { boardsApi } from '../../api/boards';
+import { useBoardStore } from '../../stores/useUIStore';
 
 interface Props {
   board: Board;
   onCardClick: (cardId: number) => void;
+  onRefresh?: () => void;
 }
 
-export function BoardView({ board, onCardClick }: Props) {
+export function BoardView({ board, onCardClick, onRefresh }: Props) {
+  const { addColumn } = useBoardStore();
   const columns = board.columns ?? [];
   const swimlanes = board.swimlanes ?? [];
   const cards = board.cards ?? [];
@@ -15,6 +21,17 @@ export function BoardView({ board, onCardClick }: Props) {
     cards.filter(
       (c) => c.columnId === columnId && (swimlaneId === undefined || c.swimlaneId === swimlaneId)
     );
+
+  const handleAddColumn = async () => {
+    const name = `新列 ${columns.length + 1}`;
+    try {
+      const col = await boardsApi.addColumn(board.id, name);
+      addColumn(col);
+      onRefresh?.();
+    } catch {
+      message.error('添加列失败');
+    }
+  };
 
   if (!board.swimlanesEnabled || swimlanes.length === 0) {
     return (
@@ -25,9 +42,16 @@ export function BoardView({ board, onCardClick }: Props) {
               key={col.id}
               column={col}
               cards={getCards(col.id)}
+              boardId={board.id}
               onCardClick={onCardClick}
+              onRefresh={onRefresh}
             />
           ))}
+          <div className="board-column board-column--add">
+            <Button type="dashed" icon={<PlusOutlined />} onClick={handleAddColumn} block>
+              添加列
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -57,7 +81,10 @@ export function BoardView({ board, onCardClick }: Props) {
               key={`${lane.id}-${col.id}`}
               column={col}
               cards={getCards(col.id, lane.id || undefined)}
+              boardId={board.id}
+              swimlaneId={lane.id || undefined}
               onCardClick={onCardClick}
+              onRefresh={onRefresh}
             />
           ))}
         </div>

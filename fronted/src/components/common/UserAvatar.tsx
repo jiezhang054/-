@@ -1,7 +1,7 @@
 import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import type { User } from '../../types/board';
 import { MOCK_USERS } from '../../mocks/users';
+import { useBoardStore } from '../../stores/useUIStore';
 
 interface Props {
   userId: number;
@@ -9,7 +9,8 @@ interface Props {
 }
 
 export function UserAvatar({ userId, size = 24 }: Props) {
-  const user = MOCK_USERS.find((u) => u.id === userId);
+  const { members } = useBoardStore();
+  const user = members.find((u) => u.id === userId) ?? MOCK_USERS.find((u) => u.id === userId);
   return (
     <Avatar size={size} icon={<UserOutlined />} style={{ backgroundColor: '#1677ff' }}>
       {user?.displayName?.[0]}

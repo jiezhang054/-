@@ -76,10 +76,20 @@ export interface Board {
   swimlanesEnabled: boolean;
   startDate?: string;
   endDate?: string;
+  visibility?: string;
   columns: BoardColumn[];
   swimlanes: Swimlane[];
   cards: CardItem[];
   starred?: boolean;
+}
+
+export interface BoardMember {
+  id: number;
+  username: string;
+  displayName: string;
+  email?: string;
+  avatar?: string;
+  role: string;
 }
 
 export interface BoardSummary {

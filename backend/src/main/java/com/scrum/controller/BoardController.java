@@ -2,6 +2,7 @@ package com.scrum.controller;
 
 import com.scrum.common.ApiResponse;
 import com.scrum.dto.BoardDetailDTO;
+import com.scrum.service.BoardDetailService;
 import com.scrum.service.BoardService;
 import com.scrum.service.BurndownService;
 import com.scrum.service.ScrumChainService;
@@ -15,6 +16,7 @@ import java.util.Map;
 @RequestMapping("/api/boards")
 public class BoardController {
     @Autowired private BoardService boardService;
+    @Autowired private BoardDetailService boardDetailService;
     @Autowired private ScrumChainService scrumChainService;
     @Autowired private BurndownService burndownService;
 
@@ -59,5 +61,68 @@ public class BoardController {
     @PostMapping("/{id}/snapshot")
     public ApiResponse<Map<String, String>> snapshot(@PathVariable Long id) {
         return ApiResponse.ok(Map.of("url", "/snapshot/" + id + "/" + java.util.UUID.randomUUID()));
+    }
+
+    @GetMapping("/{id}/activities")
+    public ApiResponse<java.util.List<Map<String, Object>>> activities(@PathVariable Long id,
+            @RequestParam(defaultValue = "30") int limit, Authentication auth) {
+        return ApiResponse.ok(boardDetailService.getActivities(id, (Long) auth.getPrincipal(), limit));
+    }
+
+    @GetMapping("/{id}/members")
+    public ApiResponse<java.util.List<Map<String, Object>>> members(@PathVariable Long id, Authentication auth) {
+        return ApiResponse.ok(boardDetailService.listMembers(id, (Long) auth.getPrincipal()));
+    }
+
+    @PostMapping("/{id}/members")
+    public ApiResponse<Map<String, Object>> inviteMember(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, String> body) {
+        return ApiResponse.ok(boardDetailService.inviteMember(id, (Long) auth.getPrincipal(),
+            body.get("identifier"), body.get("role")));
+    }
+
+    @PatchMapping("/{id}/settings")
+    public ApiResponse<BoardDetailDTO> updateSettings(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, Object> body) {
+        return ApiResponse.ok(boardDetailService.updateSettings(id, (Long) auth.getPrincipal(), body));
+    }
+
+    @PostMapping("/{id}/columns")
+    public ApiResponse<BoardDetailDTO.ColumnDTO> addColumn(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, String> body) {
+        return ApiResponse.ok(boardDetailService.addColumn(id, (Long) auth.getPrincipal(), body.get("name")));
+    }
+
+    @PutMapping("/{id}/columns/order")
+    public ApiResponse<Void> reorderColumns(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        java.util.List<Number> ids = (java.util.List<Number>) body.get("columnIds");
+        boardDetailService.reorderColumns(id, (Long) auth.getPrincipal(), ids.stream().map(Number::longValue).toList());
+        return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/{id}/swimlanes")
+    public ApiResponse<BoardDetailDTO.SwimlaneDTO> addSwimlane(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, String> body) {
+        return ApiResponse.ok(boardDetailService.addSwimlane(id, (Long) auth.getPrincipal(), body.get("name")));
+    }
+
+    @PostMapping("/{id}/cards")
+    public ApiResponse<BoardDetailDTO.CardDTO> createCard(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, Object> body) {
+        return ApiResponse.ok(boardDetailService.createCard(id, (Long) auth.getPrincipal(), body));
+    }
+
+    @PostMapping("/{id}/cards/batch")
+    public ApiResponse<Void> batchCards(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, Object> body) {
+        boardDetailService.batchUpdateCards(id, (Long) auth.getPrincipal(), body);
+        return ApiResponse.ok(null);
+    }
+
+    @GetMapping("/{id}/labels")
+    public ApiResponse<java.util.List<Map<String, Object>>> labels(@PathVariable Long id, Authentication auth) {
+        return ApiResponse.ok(boardDetailService.listLabels(id, (Long) auth.getPrincipal()));
     }
 }

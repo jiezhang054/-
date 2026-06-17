@@ -1,5 +1,5 @@
 import { apiClient, type ApiResponse } from './client';
-import type { Board, ActivityItem, RecentVisit, BurndownPoint, BurndownConfig } from '../types/board';
+import type { Board, ActivityItem, RecentVisit, BurndownPoint, BurndownConfig, BoardMember } from '../types/board';
 export { projectsApi, globalApi } from './global';
 import { projectsApi } from './global';
 
@@ -10,6 +10,29 @@ export const boardsApi = {
     apiClient.patch(`/boards/${boardId}/cards/position`, updates),
   updateCard: (cardId: number, data: Partial<Board['cards'][0]>) =>
     apiClient.put(`/cards/${cardId}`, data).then((r) => r.data.data),
+  deleteCard: (cardId: number) => apiClient.delete(`/cards/${cardId}`),
+  createCard: (boardId: number, data: { columnId: number; title: string; type?: string; swimlaneId?: number; workload?: number }) =>
+    apiClient.post<ApiResponse<Board['cards'][0]>>(`/boards/${boardId}/cards`, data).then((r) => r.data.data),
+  batchCards: (boardId: number, data: { action: string; cardIds: number[]; columnId?: number; memberId?: number }) =>
+    apiClient.post(`/boards/${boardId}/cards/batch`, data),
+  addColumn: (boardId: number, name: string) =>
+    apiClient.post<ApiResponse<{ id: number; name: string; sortOrder: number }>>(`/boards/${boardId}/columns`, { name }).then((r) => r.data.data),
+  renameColumn: (columnId: number, name: string) =>
+    apiClient.patch(`/columns/${columnId}`, { name }),
+  deleteColumn: (columnId: number, moveToColumnId?: number) =>
+    apiClient.delete(`/columns/${columnId}`, { params: moveToColumnId ? { moveToColumnId } : {} }),
+  addSwimlane: (boardId: number, name: string) =>
+    apiClient.post(`/boards/${boardId}/swimlanes`, { name }).then((r) => r.data.data),
+  updateSettings: (boardId: number, data: Record<string, unknown>) =>
+    apiClient.patch<ApiResponse<Board>>(`/boards/${boardId}/settings`, data).then((r) => r.data.data),
+  getActivities: (boardId: number, limit = 30) =>
+    apiClient.get<ApiResponse<ActivityItem[]>>(`/boards/${boardId}/activities`, { params: { limit } }).then((r) => r.data.data),
+  getMembers: (boardId: number) =>
+    apiClient.get<ApiResponse<BoardMember[]>>(`/boards/${boardId}/members`).then((r) => r.data.data),
+  inviteMember: (boardId: number, identifier: string, role?: string) =>
+    apiClient.post(`/boards/${boardId}/members`, { identifier, role }),
+  getLabels: (boardId: number) =>
+    apiClient.get<ApiResponse<{ name: string; color: string }[]>>(`/boards/${boardId}/labels`).then((r) => r.data.data),
   createReference: (cardId: number, targetBoardId: number) =>
     apiClient.post(`/cards/${cardId}/reference`, { targetBoardId }).then((r) => r.data.data),
   milestonePlan: (boardId: number, data: { name: string; startDate: string; endDate: string; epicIds: number[] }) =>
