@@ -105,6 +105,7 @@ export interface ActivityItem {
   userName: string;
   action: string;
   cardTitle?: string;
+  cardId?: number;
   boardId?: number;
   createdAt: string;
 }

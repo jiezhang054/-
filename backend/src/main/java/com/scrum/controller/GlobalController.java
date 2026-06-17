@@ -101,4 +101,48 @@ public class GlobalController {
         Long userId = (Long) auth.getPrincipal();
         return ApiResponse.ok(workspaceService.getDashboard(userId));
     }
+
+    @GetMapping("/workspace/activities")
+    public ApiResponse<List<Map<String, Object>>> activities(Authentication auth,
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(defaultValue = "20") int limit) {
+        Long userId = (Long) auth.getPrincipal();
+        return ApiResponse.ok(workspaceService.getActivities(userId, offset, limit));
+    }
+
+    @DeleteMapping("/workspace/visits/{id}")
+    public ApiResponse<Void> removeVisit(@PathVariable Long id, Authentication auth) {
+        workspaceService.removeVisit((Long) auth.getPrincipal(), id);
+        return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/boards/{boardId}/star")
+    public ApiResponse<Void> starBoard(@PathVariable Long boardId, Authentication auth) {
+        workspaceService.starBoard((Long) auth.getPrincipal(), boardId);
+        return ApiResponse.ok(null);
+    }
+
+    @DeleteMapping("/boards/{boardId}/star")
+    public ApiResponse<Void> unstarBoard(@PathVariable Long boardId, Authentication auth) {
+        workspaceService.unstarBoard((Long) auth.getPrincipal(), boardId);
+        return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/boards/{boardId}/archive")
+    public ApiResponse<Void> archiveBoard(@PathVariable Long boardId, Authentication auth) {
+        workspaceService.archiveBoard((Long) auth.getPrincipal(), boardId);
+        return ApiResponse.ok(null);
+    }
+
+    @GetMapping("/boards/{boardId}/columns")
+    public ApiResponse<List<Map<String, Object>>> boardColumns(@PathVariable Long boardId) {
+        return ApiResponse.ok(workspaceService.getBoardColumns(boardId));
+    }
+
+    @PatchMapping("/cards/{cardId}/column")
+    public ApiResponse<Map<String, Object>> quickMoveCard(@PathVariable Long cardId,
+            @RequestBody Map<String, Object> body, Authentication auth) {
+        Long columnId = Long.valueOf(body.get("columnId").toString());
+        return ApiResponse.ok(workspaceService.quickMoveCard((Long) auth.getPrincipal(), cardId, columnId));
+    }
 }

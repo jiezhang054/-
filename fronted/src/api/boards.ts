@@ -33,9 +33,44 @@ export const boardsApi = {
 export const workspaceApi = {
   dashboard: () =>
     apiClient.get<ApiResponse<{
-      recentTasks: Board['cards'];
+      recentTasks: WorkspaceTask[];
       starredBoards: { id: number; name: string; projectName: string }[];
       recentVisits: RecentVisit[];
       activities: ActivityItem[];
     }>>('/workspace/dashboard').then((r) => r.data.data),
+
+  activities: (offset = 0, limit = 20) =>
+    apiClient.get<ApiResponse<ActivityItem[]>>('/workspace/activities', { params: { offset, limit } })
+      .then((r) => r.data.data),
+
+  removeVisit: (id: number) => apiClient.delete(`/workspace/visits/${id}`),
+
+  quickMoveCard: (cardId: number, columnId: number) =>
+    apiClient.patch<ApiResponse<{ id: number; columnId: number; boardId: number }>>(`/cards/${cardId}/column`, { columnId })
+      .then((r) => r.data.data),
+
+  getBoardColumns: (boardId: number) =>
+    apiClient.get<ApiResponse<{ id: number; name: string; sortOrder: number }[]>>(`/boards/${boardId}/columns`)
+      .then((r) => r.data.data),
+
+  starBoard: (boardId: number) => apiClient.post(`/boards/${boardId}/star`),
+  unstarBoard: (boardId: number) => apiClient.delete(`/boards/${boardId}/star`),
+  archiveBoard: (boardId: number) => apiClient.post(`/boards/${boardId}/archive`),
 };
+
+export interface WorkspaceTask {
+  id: number;
+  title: string;
+  type: string;
+  workload?: number;
+  dueDate?: string;
+  startDate?: string;
+  boardId: number;
+  columnId: number;
+  boardName?: string;
+  boardType?: string;
+  projectName?: string;
+  projectId?: number;
+  columnName?: string;
+  memberIds: number[];
+}
