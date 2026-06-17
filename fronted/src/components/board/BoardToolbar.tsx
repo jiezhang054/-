@@ -24,16 +24,34 @@ export function BoardToolbar({ boardId, onRefresh }: Props) {
 
   const handleExport = async () => {
     try {
-      const blob = await boardsApi.exportJson(boardId);
-      const url = URL.createObjectURL(blob.data);
+      const data = await boardsApi.getById(boardId);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `board-${boardId}.json`;
       a.click();
       URL.revokeObjectURL(url);
+      message.success('导出成功');
     } catch {
       message.error('导出失败');
     }
+  };
+
+  const handleImport = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      try {
+        await boardsApi.importJson(boardId, file);
+        message.success('导入成功');
+        onRefresh?.();
+      } catch { message.error('导入失败'); }
+    };
+    input.click();
   };
 
   const handleSnapshot = async () => {
@@ -46,6 +64,7 @@ export function BoardToolbar({ boardId, onRefresh }: Props) {
   };
 
   const menuItems: MenuProps['items'] = [
+    { key: 'import', label: '导入 JSON', onClick: handleImport },
     { key: 'export', label: '导出 JSON', onClick: handleExport },
     { key: 'snapshot', label: '分享快照', onClick: handleSnapshot },
     { key: 'refresh', label: '刷新看板', onClick: () => onRefresh?.() },

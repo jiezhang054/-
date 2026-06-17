@@ -54,7 +54,10 @@ public class BoardController {
     }
 
     @PostMapping("/{id}/import/json")
-    public ApiResponse<String> importJson(@PathVariable Long id) {
+    public ApiResponse<String> importJson(@PathVariable Long id, Authentication auth,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) throws Exception {
+        String json = new String(file.getBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        boardDetailService.importBoardJson(id, (Long) auth.getPrincipal(), json);
         return ApiResponse.ok("导入成功");
     }
 

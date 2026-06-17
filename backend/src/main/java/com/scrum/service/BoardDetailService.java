@@ -328,4 +328,61 @@ public class BoardDetailService {
             "SELECT DISTINCT name, color FROM card_labels cl JOIN cards c ON cl.card_id = c.id " +
             "WHERE c.board_id = ? AND c.deleted = FALSE", boardId);
     }
+
+    @Transactional
+    public List<BoardDetailDTO.CardDTO> splitCard(Long cardId, Long userId, List<Map<String, Object>> tasks) {
+        Card parent = cardMapper.selectById(cardId);
+        if (parent == null) throw new IllegalArgumentException("卡片不存在");
+        ensureAccess(parent.getBoardId(), userId);
+        if (!"USER_STORY".equals(parent.getType()) && !"EPIC".equals(parent.getType())) {
+            throw new IllegalArgumentException("仅用户故事或史诗可拆分");
+        }
+        List<BoardDetailDTO.CardDTO> created = new ArrayList<>();
+        int i = 0;
+        for (Map<String, Object> t : tasks) {
+            Card child = new Card();
+            child.setBoardId(parent.getBoardId());
+            child.setColumnId(parent.getColumnId());
+            child.setSwimlaneId(parent.getSwimlaneId());
+            child.setTitle(t.get("title").toString());
+            child.setType("TASK");
+            child.setWorkload(t.get("workload") != null ? Integer.valueOf(t.get("workload").toString()) : 1);
+            child.setSortOrder(parent.getSortOrder() + i + 1);
+            child.setDeleted(false);
+            child.setVersion(1);
+            cardMapper.insert(child);
+            created.add(boardService.getBoardDetail(parent.getBoardId(), userId).getCards().stream()
+                .filter(c -> c.getId().equals(child.getId())).findFirst().orElse(null));
+            i++;
+        }
+        logActivity(userId, parent.getBoardId(), parent.getId(), "拆分了卡片「" + parent.getTitle() + "」为 " + tasks.size() + " 个任务");
+        return created;
+    }
+
+    @Transactional
+    public void importBoardJson(Long boardId, Long userId, String json) throws Exception {
+        ensureAccess(boardId, userId);
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(json);
+        com.fasterxml.jackson.databind.JsonNode cards = root.get("cards");
+        if (cards == null || !cards.isArray()) throw new IllegalArgumentException("JSON 格式无效");
+        List<BoardColumn> cols = columnMapper.selectList(
+            new LambdaQueryWrapper<BoardColumn>().eq(BoardColumn::getBoardId, boardId)
+                .orderByAsc(BoardColumn::getSortOrder));
+        Long defaultCol = cols.isEmpty() ? null : cols.get(0).getId();
+        for (com.fasterxml.jackson.databind.JsonNode c : cards) {
+            Card card = new Card();
+            card.setBoardId(boardId);
+            card.setColumnId(c.has("columnId") ? c.get("columnId").asLong() : defaultCol);
+            card.setTitle(c.get("title").asText());
+            card.setType(c.has("type") ? c.get("type").asText() : "TASK");
+            card.setWorkload(c.has("workload") ? c.get("workload").asInt() : 1);
+            card.setDescription(c.has("description") ? c.get("description").asText() : null);
+            card.setSortOrder(0);
+            card.setDeleted(false);
+            card.setVersion(1);
+            cardMapper.insert(card);
+        }
+        logActivity(userId, boardId, null, "导入了看板数据");
+    }
 }
