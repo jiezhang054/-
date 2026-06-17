@@ -20,6 +20,7 @@ public class BoardService {
     @Autowired private CardMapper cardMapper;
     @Autowired private ProjectMapper projectMapper;
     @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired private com.scrum.websocket.BoardWebSocketHandler webSocketHandler;
 
     public BoardDetailDTO getBoardDetail(Long boardId, Long userId) {
         Board board = boardMapper.selectById(boardId);
@@ -125,6 +126,11 @@ public class BoardService {
             if (u.get("sortOrder") != null) card.setSortOrder(Integer.valueOf(u.get("sortOrder").toString()));
             card.setVersion(card.getVersion() + 1);
             cardMapper.updateById(card);
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("cardId", cardId);
+            payload.put("columnId", card.getColumnId());
+            if (card.getSwimlaneId() != null) payload.put("swimlaneId", card.getSwimlaneId());
+            webSocketHandler.notifyBoard(boardId, "CARD_MOVED", payload);
         }
     }
 
@@ -132,6 +138,12 @@ public class BoardService {
     public BoardDetailDTO.CardDTO updateCard(Long cardId, Map<String, Object> updates) {
         Card card = cardMapper.selectById(cardId);
         if (card == null) throw new RuntimeException("卡片不存在");
+        if (updates.containsKey("version")) {
+            int expected = Integer.parseInt(updates.get("version").toString());
+            if (card.getVersion() != null && card.getVersion() != expected) {
+                throw new IllegalStateException("卡片已被他人修改，请刷新后重试");
+            }
+        }
         if (updates.containsKey("title")) card.setTitle((String) updates.get("title"));
         if (updates.containsKey("description")) card.setDescription((String) updates.get("description"));
         if (updates.containsKey("workload")) card.setWorkload(Integer.valueOf(updates.get("workload").toString()));
