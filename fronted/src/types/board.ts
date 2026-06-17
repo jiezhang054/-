@@ -1,4 +1,4 @@
-export type BoardType = 'NORMAL' | 'ROADMAP' | 'MILESTONE' | 'SPRINT';
+export type BoardType = 'NORMAL' | 'ROADMAP' | 'MILESTONE' | 'SPRINT' | 'DEFECT';
 export type CardType = 'EPIC' | 'USER_STORY' | 'TASK' | 'BUG' | 'OTHER';
 export type ProjectRole = 'OWNER' | 'MEMBER' | 'READONLY';
 export type BoardRole = 'ADMIN' | 'MEMBER' | 'READONLY';

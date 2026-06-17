@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Spin } from 'antd';
+import { Spin, message } from 'antd';
 import { BoardHeader } from '../../components/board/BoardHeader';
 import { BoardToolbar } from '../../components/board/BoardToolbar';
 import { BoardView } from '../../components/board/BoardView';
@@ -43,18 +43,8 @@ export function BoardPage() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['board', id],
-    queryFn: async () => {
-      const res = await boardsApi.getById(id);
-      return normalizeBoard(res);
-    },
+    queryFn: async () => normalizeBoard(await boardsApi.getById(id)),
     retry: false,
-  });
-
-  useQuery({
-    queryKey: ['board-members', id],
-    queryFn: () => boardsApi.getMembers(id),
-    enabled: !!id,
-    staleTime: 60_000,
   });
 
   useEffect(() => {
@@ -73,17 +63,16 @@ export function BoardPage() {
     boardsApi.getMembers(id).then(setMembers).catch(() => {});
   }, [id, setMembers, data]);
 
-  const wsEnabled = !isLoading && !!data;
-  useBoardWebSocket(id, wsEnabled);
+  const { broadcast } = useBoardWebSocket(id, !isLoading && !!data);
 
-  const displayBoard = useMemo<Board | null>(() => {
+  const displayBoard = useMemo(() => {
     if (!board) return null;
-    const filtered = filterCards(board.cards, boardFilter);
-    return { ...board, cards: filtered };
+    return { ...board, cards: filterCards(board.cards, boardFilter) };
   }, [board, boardFilter]);
 
   const handleMoveCard = async (cardId: number, columnId: number, swimlaneId?: number) => {
     if (!board) return;
+    broadcast('CARD_MOVED', { cardId, columnId, swimlaneId });
     try {
       await boardsApi.updateCardPosition(board.id, [{ cardId, columnId, swimlaneId, sortOrder: 0 }]);
     } catch { /* local state already updated */ }
@@ -94,13 +83,6 @@ export function BoardPage() {
     queryClient.invalidateQueries({ queryKey: ['board', id] });
   };
 
-  const handleStarChange = () => {
-    queryClient.invalidateQueries({ queryKey: ['board', id] });
-    queryClient.invalidateQueries({ queryKey: ['navigation'] });
-  };
-
-  const handleArchived = () => navigate('/my/boards');
-
   if (isLoading) return <Spin style={{ display: 'block', margin: '100px auto' }} />;
   if (isError || !board || !displayBoard) return <div style={{ padding: 24 }}>看板加载失败，请刷新重试</div>;
 
@@ -110,43 +92,40 @@ export function BoardPage() {
 
   return (
     <div>
-      <BoardHeader
-        board={board}
-        onStarChange={handleStarChange}
-        onArchived={handleArchived}
-        onSettings={() => setSettingsModalOpen(true)}
-        onRefresh={() => refetch()}
-      />
+      <BoardHeader board={board} onArchived={() => navigate('/my/boards')} onSettings={() => setSettingsModalOpen(true)} onRefresh={() => refetch()} />
       <BoardToolbar boardId={board.id} onRefresh={() => refetch()} />
       <BoardDndContext board={displayBoard} onMoveCard={handleMoveCard}>
         <BoardView board={displayBoard} onCardClick={openCardDrawer} onRefresh={() => refetch()} />
       </BoardDndContext>
-      <CardDetailDrawer card={selectedCard} open={cardDrawerOpen} onClose={closeCardDrawer} />
+      <CardDetailDrawer card={selectedCard} open={cardDrawerOpen} onClose={closeCardDrawer} onRefresh={() => refetch()} />
       <BoardMembersModal open={membersModalOpen} boardId={board.id} onClose={() => setMembersModalOpen(false)} />
-      <BoardSettingsModal
-        open={settingsModalOpen}
-        board={board}
-        onClose={() => setSettingsModalOpen(false)}
-        onUpdated={handleBoardUpdated}
-      />
-      <BoardActivityDrawer
-        open={activityDrawerOpen}
-        boardId={board.id}
-        onClose={() => setActivityDrawerOpen(false)}
-      />
+      <BoardSettingsModal open={settingsModalOpen} board={board} onClose={() => setSettingsModalOpen(false)} onUpdated={handleBoardUpdated} />
+      <BoardActivityDrawer open={activityDrawerOpen} boardId={board.id} onClose={() => setActivityDrawerOpen(false)} />
       <SprintPlanModal
         open={sprintPlanOpen}
         onClose={() => setSprintPlanOpen(false)}
         availableStories={availableStories.length ? availableStories : board.cards.filter((c) => c.type === 'USER_STORY')}
-        onConfirm={(sprints) => boardsApi.sprintPlan(board.id, { sprints: sprints.map((s) => ({
-          name: s.name, startDate: s.startDate, endDate: s.endDate, storyIds: s.stories.map((st) => st.id),
-        })) }).catch(() => {})}
+        onConfirm={async (sprints) => {
+          try {
+            const res = await boardsApi.sprintPlan(board.id, { sprints: sprints.map((s) => ({
+              name: s.name, startDate: s.startDate, endDate: s.endDate, storyIds: s.stories.map((st) => st.id),
+            })) });
+            message.success('Sprint 看板已创建');
+            if (res?.id) navigate(`/board/${res.id}`);
+          } catch { message.error('Sprint 规划失败'); }
+        }}
       />
       <MilestonePlanModal
         open={milestonePlanOpen}
         onClose={() => setMilestonePlanOpen(false)}
         epics={epics}
-        onConfirm={(data) => boardsApi.milestonePlan(board.id, data).catch(() => {})}
+        onConfirm={async (data) => {
+          try {
+            const res = await boardsApi.milestonePlan(board.id, data);
+            message.success('里程碑看板已创建');
+            if (res?.id) navigate(`/board/${res.id}`);
+          } catch { message.error('里程碑规划失败'); }
+        }}
       />
     </div>
   );

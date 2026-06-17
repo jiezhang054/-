@@ -115,6 +115,20 @@ public class ScrumChainService {
                 card.setDescription(story.getDescription());
                 card.setIsReference(true); card.setSourceCardId(story.getId());
                 cardMapper.insert(card);
+
+                List<Card> childTasks = cardMapper.selectList(
+                    new LambdaQueryWrapper<Card>().eq(Card::getBoardId, milestoneBoardId)
+                        .eq(Card::getSwimlaneId, story.getSwimlaneId()).eq(Card::getType, "TASK")
+                        .eq(Card::getDeleted, false).ne(Card::getId, story.getId()));
+                for (Card task : childTasks) {
+                    Card taskCard = new Card();
+                    taskCard.setBoardId(sprint.getId()); taskCard.setColumnId(todoColId);
+                    taskCard.setSwimlaneId(lane.getId()); taskCard.setTitle(task.getTitle());
+                    taskCard.setType("TASK"); taskCard.setWorkload(task.getWorkload());
+                    taskCard.setDescription(task.getDescription());
+                    taskCard.setIsReference(true); taskCard.setSourceCardId(task.getId());
+                    cardMapper.insert(taskCard);
+                }
             }
             last = boardService.getBoardDetail(sprint.getId(), null);
         }
@@ -137,6 +151,7 @@ public class ScrumChainService {
         ref.setType(source.getType()); ref.setWorkload(source.getWorkload());
         ref.setIsReference(true); ref.setSourceCardId(cardId);
         cardMapper.insert(ref);
-        return boardService.updateCard(cardId, Map.of());
+        return boardService.getBoardDetail(targetBoardId, null).getCards().stream()
+            .filter(c -> c.getId().equals(ref.getId())).findFirst().orElse(null);
     }
 }

@@ -6,9 +6,11 @@ import com.scrum.entity.Card;
 import com.scrum.mapper.CardMapper;
 import com.scrum.service.BoardDetailService;
 import com.scrum.service.BoardService;
+import com.scrum.service.ScrumChainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -16,6 +18,7 @@ import java.util.Map;
 public class CardController {
     @Autowired private BoardService boardService;
     @Autowired private BoardDetailService boardDetailService;
+    @Autowired private ScrumChainService scrumChainService;
     @Autowired private CardMapper cardMapper;
 
     @PutMapping("/{id}")
@@ -32,5 +35,25 @@ public class CardController {
     public ApiResponse<Void> deleteCard(@PathVariable Long id, Authentication auth) {
         boardDetailService.deleteCard(id, (Long) auth.getPrincipal());
         return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/{id}/reference")
+    public ApiResponse<BoardDetailDTO.CardDTO> createReference(@PathVariable Long id,
+            @RequestBody Map<String, Object> body, Authentication auth) {
+        Long userId = (Long) auth.getPrincipal();
+        Card card = cardMapper.selectById(id);
+        if (card == null) throw new IllegalArgumentException("卡片不存在");
+        boardDetailService.ensureAccess(card.getBoardId(), userId);
+        Long targetBoardId = Long.valueOf(body.get("targetBoardId").toString());
+        boardDetailService.ensureAccess(targetBoardId, userId);
+        return ApiResponse.ok(scrumChainService.createReference(id, targetBoardId));
+    }
+
+    @PostMapping("/{id}/split")
+    public ApiResponse<List<BoardDetailDTO.CardDTO>> splitCard(@PathVariable Long id,
+            @RequestBody Map<String, Object> body, Authentication auth) {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> tasks = (List<Map<String, Object>>) body.get("tasks");
+        return ApiResponse.ok(boardDetailService.splitCard(id, (Long) auth.getPrincipal(), tasks));
     }
 }
