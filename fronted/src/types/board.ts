@@ -9,6 +9,8 @@ export interface User {
   displayName: string;
   avatar?: string;
   email?: string;
+  background?: string;
+  locale?: string;
 }
 
 export interface Label {

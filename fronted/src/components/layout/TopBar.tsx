@@ -30,17 +30,26 @@ export function TopBar() {
   ];
 
   const userItems: MenuProps['items'] = [
+    { key: 'profile', label: '个人中心', icon: <UserOutlined />, onClick: () => navigate('/settings/profile') },
     {
       key: 'lang-zh',
       label: '中文',
       icon: <GlobalOutlined />,
-      onClick: () => { i18n.changeLanguage('zh-CN'); setLanguage('zh-CN'); },
+      onClick: async () => {
+        i18n.changeLanguage('zh-CN');
+        setLanguage('zh-CN');
+        try { await import('../../api/auth').then((m) => m.authApi.updateSettings({ locale: 'zh-CN' })); } catch { /* ignore */ }
+      },
     },
     {
       key: 'lang-en',
       label: 'English',
       icon: <GlobalOutlined />,
-      onClick: () => { i18n.changeLanguage('en-US'); setLanguage('en-US'); },
+      onClick: async () => {
+        i18n.changeLanguage('en-US');
+        setLanguage('en-US');
+        try { await import('../../api/auth').then((m) => m.authApi.updateSettings({ locale: 'en-US' })); } catch { /* ignore */ }
+      },
     },
     { type: 'divider' },
     { key: 'logout', label: t('logout'), icon: <LogoutOutlined />, onClick: () => { logout(); navigate('/login'); } },

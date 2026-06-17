@@ -3,7 +3,6 @@ import { Card, Form, Input, Button, Typography, message } from 'antd';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { authApi } from '../../api/auth';
-import { CURRENT_USER } from '../../mocks/users';
 
 const { Title } = Typography;
 
@@ -19,10 +18,9 @@ export function LoginPage() {
       setAuth(res.token, res.user);
       message.success('登录成功');
       navigate('/workspace');
-    } catch {
-      setAuth('demo-token', CURRENT_USER);
-      message.info('使用演示账号登录');
-      navigate('/workspace');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      message.error(msg || '登录失败，请检查用户名和密码');
     } finally {
       setLoading(false);
     }
@@ -33,16 +31,19 @@ export function LoginPage() {
       <Card className="auth-card">
         <Title level={3} style={{ textAlign: 'center', color: '#1677ff' }}>领歌 Scrum</Title>
         <Form layout="vertical" onFinish={onFinish} initialValues={{ username: 'zhong', password: '123456' }}>
-          <Form.Item name="username" label="用户名" rules={[{ required: true }]}>
+          <Form.Item name="username" label="用户名" rules={[{ required: true, message: '请输入用户名' }]}>
             <Input size="large" />
           </Form.Item>
-          <Form.Item name="password" label="密码" rules={[{ required: true }]}>
+          <Form.Item name="password" label="密码" rules={[{ required: true, message: '请输入密码' }]}>
             <Input.Password size="large" />
           </Form.Item>
           <Button type="primary" htmlType="submit" block size="large" loading={loading}>登录</Button>
         </Form>
         <div style={{ textAlign: 'center', marginTop: 16 }}>
           还没有账号？<Link to="/register">注册</Link>
+        </div>
+        <div style={{ textAlign: 'center', marginTop: 8, color: '#8f959e', fontSize: 12 }}>
+          演示账号：zhong / 123456
         </div>
       </Card>
     </div>
