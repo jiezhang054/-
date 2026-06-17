@@ -109,6 +109,10 @@ public class DataInitializer implements CommandLineRunner {
         jdbcTemplate.update(
             "INSERT INTO notifications (user_id, type, title, content, link_type, link_id, read_flag) VALUES (?, 'SPRINT', 'Sprint 提醒', 'Sprint 1 将于 3 天后结束', 'board', 3, TRUE)",
             ownerId);
+
+        jdbcTemplate.update(
+            "INSERT INTO mindmaps (name, project_id, owner_id, content) VALUES (?, 1, ?, ?)",
+            "电商重构脑图", ownerId, "{\"nodes\":[],\"edges\":[]}");
     }
 
     private void insertBoard(long id, String name, String type, boolean swimlanes, String start, String end) {

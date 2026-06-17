@@ -7,6 +7,7 @@ import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { WorkspacePage } from '../pages/workspace/WorkspacePage';
 import { ProjectPage } from '../pages/project/ProjectPage';
+import { ProjectStatsPage } from '../pages/project/ProjectStatsPage';
 import { BoardPage } from '../pages/board/BoardPage';
 import { BoardStatsPage } from '../pages/board/BoardStatsPage';
 import { BoardTimelinePage } from '../pages/board/BoardTimelinePage';
@@ -32,6 +33,7 @@ export const router = createBrowserRouter([
       { path: 'workspace', element: <WorkspacePage /> },
       { path: 'settings/profile', element: <ProfilePage /> },
       { path: 'projects/:projectId', element: <ProjectPage /> },
+      { path: 'projects/:projectId/stats', element: <ProjectStatsPage /> },
       { path: 'board/:boardId', element: <BoardPage /> },
       { path: 'board/:boardId/stats', element: <BoardStatsPage /> },
       { path: 'board/:boardId/timeline', element: <BoardTimelinePage /> },

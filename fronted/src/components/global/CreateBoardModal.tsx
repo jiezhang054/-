@@ -1,4 +1,5 @@
 import { Modal, Form, Input, Select, message } from 'antd';
+import { useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { globalApi, projectsApi } from '../../api/global';
 
@@ -6,6 +7,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onCreated?: (boardId: number) => void;
+  defaultProjectId?: number;
 }
 
 const BOARD_TEMPLATES = [
@@ -15,7 +17,7 @@ const BOARD_TEMPLATES = [
   { value: 'DEFECT', label: '缺陷看板' },
 ];
 
-export function CreateBoardModal({ open, onClose, onCreated }: Props) {
+export function CreateBoardModal({ open, onClose, onCreated, defaultProjectId }: Props) {
   const [form] = Form.useForm();
 
   const { data: projects = [] } = useQuery({
@@ -23,6 +25,12 @@ export function CreateBoardModal({ open, onClose, onCreated }: Props) {
     queryFn: projectsApi.list,
     enabled: open,
   });
+
+  useEffect(() => {
+    if (open && defaultProjectId) {
+      form.setFieldsValue({ projectId: defaultProjectId });
+    }
+  }, [open, defaultProjectId, form]);
 
   const mutation = useMutation({
     mutationFn: globalApi.createBoard,

@@ -31,10 +31,80 @@ public class GlobalController {
             body.get("name"), body.get("description"), body.getOrDefault("template", "SCRUM")));
     }
 
+    @GetMapping("/projects/archived")
+    public ApiResponse<List<Map<String, Object>>> archivedProjects(Authentication auth) {
+        return ApiResponse.ok(projectService.listArchived((Long) auth.getPrincipal()));
+    }
+
     @GetMapping("/projects/{id}")
     public ApiResponse<Map<String, Object>> project(@PathVariable Long id, Authentication auth) {
         Long userId = (Long) auth.getPrincipal();
         return ApiResponse.ok(projectService.getById(id, userId));
+    }
+
+    @PatchMapping("/projects/{id}")
+    public ApiResponse<Map<String, Object>> updateProject(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, String> body) {
+        return ApiResponse.ok(projectService.update(id, (Long) auth.getPrincipal(),
+            body.get("name"), body.get("description")));
+    }
+
+    @PostMapping("/projects/{id}/archive")
+    public ApiResponse<Void> archiveProject(@PathVariable Long id, Authentication auth) {
+        projectService.archive(id, (Long) auth.getPrincipal());
+        return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/projects/{id}/restore")
+    public ApiResponse<Void> restoreProject(@PathVariable Long id, Authentication auth) {
+        projectService.restore(id, (Long) auth.getPrincipal());
+        return ApiResponse.ok(null);
+    }
+
+    @DeleteMapping("/projects/{id}")
+    public ApiResponse<Void> deleteProject(@PathVariable Long id, Authentication auth) {
+        projectService.delete(id, (Long) auth.getPrincipal());
+        return ApiResponse.ok(null);
+    }
+
+    @GetMapping("/projects/{id}/members")
+    public ApiResponse<List<Map<String, Object>>> projectMembers(@PathVariable Long id, Authentication auth) {
+        return ApiResponse.ok(projectService.listMembers(id, (Long) auth.getPrincipal()));
+    }
+
+    @PostMapping("/projects/{id}/members")
+    public ApiResponse<Map<String, Object>> inviteMember(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, String> body) {
+        return ApiResponse.ok(projectService.inviteMember(id, (Long) auth.getPrincipal(),
+            body.get("identifier"), body.get("role")));
+    }
+
+    @PatchMapping("/projects/{id}/members/{memberId}")
+    public ApiResponse<Void> updateMemberRole(@PathVariable Long id, @PathVariable Long memberId,
+            Authentication auth, @RequestBody Map<String, String> body) {
+        projectService.updateMemberRole(id, (Long) auth.getPrincipal(), memberId, body.get("role"));
+        return ApiResponse.ok(null);
+    }
+
+    @DeleteMapping("/projects/{id}/members/{memberId}")
+    public ApiResponse<Void> removeMember(@PathVariable Long id, @PathVariable Long memberId, Authentication auth) {
+        projectService.removeMember(id, (Long) auth.getPrincipal(), memberId);
+        return ApiResponse.ok(null);
+    }
+
+    @PutMapping("/projects/{id}/boards/order")
+    public ApiResponse<Void> reorderBoards(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        List<Number> ids = (List<Number>) body.get("boardIds");
+        List<Long> boardIds = ids.stream().map(Number::longValue).toList();
+        projectService.reorderBoards(id, (Long) auth.getPrincipal(), boardIds);
+        return ApiResponse.ok(null);
+    }
+
+    @GetMapping("/projects/{id}/stats")
+    public ApiResponse<Map<String, Object>> projectStats(@PathVariable Long id, Authentication auth) {
+        return ApiResponse.ok(projectService.getStats(id, (Long) auth.getPrincipal()));
     }
 
     @PostMapping("/boards")

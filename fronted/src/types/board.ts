@@ -82,13 +82,6 @@ export interface Board {
   starred?: boolean;
 }
 
-export interface Project {
-  id: number;
-  name: string;
-  description?: string;
-  boards: BoardSummary[];
-}
-
 export interface BoardSummary {
   id: number;
   name: string;
@@ -97,6 +90,43 @@ export interface BoardSummary {
   starred?: boolean;
   startDate?: string;
   endDate?: string;
+  completed?: boolean;
+  sortOrder?: number;
+}
+
+export interface ProjectTab {
+  key: string;
+  boardId: number;
+  label: string;
+  type: BoardType;
+}
+
+export interface ProjectMember {
+  id: number;
+  username: string;
+  displayName: string;
+  email?: string;
+  avatar?: string;
+  role: ProjectRole;
+}
+
+export interface Project {
+  id: number;
+  name: string;
+  description?: string;
+  template?: string;
+  archived?: boolean;
+  role?: ProjectRole;
+  boards: BoardSummary[];
+  tabs?: ProjectTab[];
+  mindmapId?: number;
+  mindmapName?: string;
+}
+
+export interface ProjectStats {
+  backlogProgress: { boardId: number; boardName: string; columns: { name: string; count: number }[] }[];
+  sprintStats: { boardId: number; boardName: string; planned: number; completed: number; rate: number }[];
+  defectDistribution: { boardId: number; boardName: string; columns: { name: string; count: number }[] }[];
 }
 
 export interface ActivityItem {
