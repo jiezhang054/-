@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>中期检查汇报分工 — Scrum 管理软件</title>
+  <title>中期检查汇报分工 — Scrum 敏捷管理工具</title>
   <style>
     :root {
       --primary: #1677ff;
@@ -12,10 +12,10 @@
       --border: #e8e8e8;
       --bg: #f5f7fa;
       --card: #ffffff;
-      --member-a: #1677ff;
-      --member-b: #52c41a;
-      --member-c: #722ed1;
-      --member-d: #fa8c16;
+      --c1: #1677ff;
+      --c2: #52c41a;
+      --c3: #722ed1;
+      --c4: #fa8c16;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -28,7 +28,7 @@
       padding: 32px 20px 64px;
     }
 
-    .container { max-width: 960px; margin: 0 auto; }
+    .container { max-width: 980px; margin: 0 auto; }
 
     header {
       background: linear-gradient(135deg, #1677ff 0%, #0958d9 100%);
@@ -40,12 +40,13 @@
     }
 
     header h1 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
-    header p { opacity: 0.9; font-size: 15px; }
+    header .subtitle { opacity: 0.92; font-size: 15px; margin-bottom: 4px; }
+    header .course { opacity: 0.85; font-size: 13px; }
 
     .meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 16px;
+      gap: 10px;
       margin-top: 16px;
       font-size: 13px;
     }
@@ -77,7 +78,6 @@
       font-size: 15px;
       font-weight: 600;
       margin: 18px 0 8px;
-      color: var(--text);
     }
 
     p { margin-bottom: 10px; color: var(--text-secondary); }
@@ -89,10 +89,20 @@
       border-left: 4px solid var(--primary);
       padding: 16px 20px;
       border-radius: 0 8px 8px 0;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
 
     .intro-box p { color: #0958d9; margin: 0; font-size: 15px; }
+
+    .note-box {
+      background: #fffbe6;
+      border-left: 4px solid #faad14;
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 12px 0;
+      font-size: 14px;
+      color: #874d00;
+    }
 
     .member-card {
       border-radius: 10px;
@@ -102,39 +112,38 @@
     }
 
     .member-card:last-child { margin-bottom: 0; }
-
-    .member-card.a { border-left: 5px solid var(--member-a); background: #f0f5ff; }
-    .member-card.b { border-left: 5px solid var(--member-b); background: #f6ffed; }
-    .member-card.c { border-left: 5px solid var(--member-c); background: #f9f0ff; }
-    .member-card.d { border-left: 5px solid var(--member-d); background: #fff7e6; }
+    .member-card.m1 { border-left: 5px solid var(--c1); background: #f0f5ff; }
+    .member-card.m2 { border-left: 5px solid var(--c2); background: #f6ffed; }
+    .member-card.m3 { border-left: 5px solid var(--c3); background: #f9f0ff; }
+    .member-card.m4 { border-left: 5px solid var(--c4); background: #fff7e6; }
 
     .member-header {
       display: flex;
-      align-items: center;
-      gap: 12px;
+      align-items: flex-start;
+      gap: 14px;
       margin-bottom: 14px;
     }
 
-    .member-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
+    .member-avatar {
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       color: #fff;
       font-weight: 700;
       font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
     }
 
-    .member-card.a .member-badge { background: var(--member-a); }
-    .member-card.b .member-badge { background: var(--member-b); }
-    .member-card.c .member-badge { background: var(--member-c); }
-    .member-card.d .member-badge { background: var(--member-d); }
+    .member-card.m1 .member-avatar { background: var(--c1); }
+    .member-card.m2 .member-avatar { background: var(--c2); }
+    .member-card.m3 .member-avatar { background: var(--c3); }
+    .member-card.m4 .member-avatar { background: var(--c4); }
 
-    .member-title { font-size: 17px; font-weight: 600; }
-    .member-subtitle { font-size: 13px; color: var(--text-secondary); }
+    .member-name { font-size: 18px; font-weight: 600; color: var(--text); }
+    .member-role { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 
     .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 14px; }
 
@@ -145,6 +154,8 @@
       background: rgba(0, 0, 0, 0.06);
       color: var(--text-secondary);
     }
+
+    .tag-lead { background: #fff1b8; color: #ad6800; }
 
     code {
       background: #f5f5f5;
@@ -166,6 +177,7 @@
       border: 1px solid var(--border);
       padding: 10px 14px;
       text-align: left;
+      vertical-align: top;
     }
 
     th { background: #fafafa; font-weight: 600; color: var(--text); }
@@ -181,7 +193,8 @@
 
     .demo-path strong { color: var(--text); }
 
-    .tips li { list-style: disc; }
+    .sprint-timeline { font-size: 14px; }
+    .sprint-timeline td:first-child { white-space: nowrap; font-weight: 600; color: var(--text); }
 
     footer {
       text-align: center;
@@ -195,207 +208,329 @@
   <div class="container">
     <header>
       <h1>中期检查汇报分工</h1>
-      <p>Scrum 敏捷管理工具 · 四人小组代码演示安排</p>
+      <p class="subtitle">基于 Scrum 方法的敏捷项目管理工具</p>
+      <p class="course">哈尔滨工业大学（威海）· 软件工程综合课程设计 · 2311104 班 · 第 5 组</p>
       <div class="meta">
         <span>📍 研究院北 516</span>
-        <span>🕗 08:30 开始</span>
+        <span>🕗 6 月 23 日 08:30</span>
         <span>⏱ 每人 3～5 分钟</span>
         <span>👤 演示账号 zhong / 123456</span>
+        <span>👥 张茗杰 · 殷浩然 · 钟礼豪 · 臧传杨</span>
       </div>
     </header>
 
     <section>
-      <h2>整体开场（30 秒，任意一人）</h2>
+      <h2>任务书概要</h2>
       <div class="intro-box">
-        <p>我们做的是对标 lg.team 的 <strong>Scrum 敏捷管理工具</strong>，采用 <strong>React + Spring Boot</strong> 前后端分离架构，目前已完成 <strong>12 个功能模块</strong>，联调脚本 <strong>30/30 全部通过</strong>。</p>
+        <p>设计并实现一个<strong>轻量级、聚焦 Scrum 核心流程、支持实时协作</strong>的敏捷项目管理工具，对标 lg.team，覆盖产品待办列表、冲刺管理、任务看板、燃尽图，并实现<strong>产品路线图 → 里程碑 → Sprint 看板</strong>自动生成链路。</p>
       </div>
-      <p><strong>技术栈：</strong></p>
+      <h3>核心需求边界（任务书）</h3>
       <ul>
-        <li>前端：React + TypeScript + Vite + Ant Design + Zustand + TanStack Query + @dnd-kit</li>
-        <li>后端：Spring Boot 3 + MyBatis Plus + H2 + JWT + WebSocket</li>
+        <li>Scrum 核心：看板、泳道、卡片拖拽、燃尽图、权限 RBAC</li>
+        <li>自动生成：里程碑看板、Sprint 看板由路线图规划自动创建</li>
+        <li>实时协作：WebSocket 推送，多人编辑数据一致性</li>
+        <li>工作台：近期事项、星标看板、最近访问、卡片动态</li>
+        <li>脑图：项目共享脑图，节点编辑与导入导出</li>
       </ul>
+      <div class="note-box">
+        <strong>说明：</strong>任务书原计划前端为 Vue3 + Element Plus，实际实现采用 <strong>React + TypeScript + Vite + Ant Design</strong>，后端为 Spring Boot 3 + JWT + H2 + WebSocket，功能范围与任务书一致。
+      </div>
+      <p><strong>当前进度：</strong>已完成 12 个功能模块开发，联调脚本 30/30 通过，处于 Sprint 2 末～Sprint 3 初（中期检查节点）。</p>
     </section>
 
     <section>
-      <h2>成员分工详情</h2>
-
-      <div class="member-card a">
-        <div class="member-header">
-          <div class="member-badge">A</div>
-          <div>
-            <div class="member-title">基础架构 + 认证 + 全局功能</div>
-            <div class="member-subtitle">负责模块一（全局）、模块二（认证与个人设置）</div>
-          </div>
-        </div>
-        <div class="tag-row">
-          <span class="tag">模块一</span>
-          <span class="tag">模块二</span>
-          <span class="tag">JWT</span>
-          <span class="tag">Swagger</span>
-        </div>
-        <h3>汇报重点</h3>
-        <ol>
-          <li><strong>项目结构</strong>：<code>fronted/</code>、<code>backend/</code>、<code>docs/</code>、<code>scripts/</code> 分工说明</li>
-          <li><strong>认证体系</strong>：JWT 登录/注册、路由守卫
-            <ul>
-              <li>后端：<code>AuthController</code>、<code>JwtAuthFilter</code>、<code>SecurityConfig</code></li>
-              <li>前端：<code>LoginPage</code>、<code>RegisterPage</code>、<code>useAuthStore</code></li>
-            </ul>
-          </li>
-          <li><strong>全局能力</strong>：顶部导航、侧边栏、通知中心、新建看板/脑图弹窗、中英文切换
-            <ul>
-              <li>后端：<code>GlobalController</code>、<code>NavigationService</code>、<code>NotificationService</code></li>
-              <li>前端：<code>TopBar</code>、<code>Sidebar</code>、<code>CreateBoardModal</code></li>
-            </ul>
-          </li>
-          <li><strong>API 规范</strong>：统一 <code>ApiResponse</code>、Swagger 文档、全局异常处理</li>
-        </ol>
-        <div class="demo-path">
-          <strong>演示路径：</strong> <code>/login</code> → 登录 → 顶部「新建看板」→ 通知铃铛 → 语言切换
-        </div>
-        <p style="margin-top:10px"><strong>可强调：</strong>基础设施已搭好，后续模块都基于统一 API 与鉴权体系。</p>
-      </div>
-
-      <div class="member-card b">
-        <div class="member-header">
-          <div class="member-badge">B</div>
-          <div>
-            <div class="member-title">工作台 + 项目管理 + 个人资源</div>
-            <div class="member-subtitle">负责模块三（工作台）、模块四（项目）、模块五（个人看板/脑图列表）</div>
-          </div>
-        </div>
-        <div class="tag-row">
-          <span class="tag">模块三</span>
-          <span class="tag">模块四</span>
-          <span class="tag">模块五</span>
-          <span class="tag">ER 设计</span>
-        </div>
-        <h3>汇报重点</h3>
-        <ol>
-          <li><strong>工作台</strong>：近期任务、星标看板、最近访问、项目动态（<code>WorkspacePage</code>、<code>WorkspaceService</code>）</li>
-          <li><strong>项目管理</strong>：项目详情、成员管理、项目统计、看板/脑图入口（<code>ProjectPage</code>、<code>ProjectStatsPage</code>、<code>ProjectService</code>）</li>
-          <li><strong>个人资源管理</strong>：看板/脑图列表、筛选、排序、归档、复制、移动、重命名（<code>MyBoardsPage</code>、<code>MindMapListPage</code>、<code>Archived*Page</code>）</li>
-          <li><strong>数据模型</strong>：项目—看板—成员关系（参考 <code>docs/ER.md</code>）</li>
-        </ol>
-        <div class="demo-path">
-          <strong>演示路径：</strong> <code>/workspace</code> → <code>/projects/1</code> → <code>/my/boards</code> → <code>/my/mindmaps</code>
-        </div>
-        <p style="margin-top:10px"><strong>可强调：</strong>从「个人视角」和「项目视角」两条线都能管理敏捷资源。</p>
-      </div>
-
-      <div class="member-card c">
-        <div class="member-header">
-          <div class="member-badge">C</div>
-          <div>
-            <div class="member-title">看板核心 + Scrum 专项 + 统计分析</div>
-            <div class="member-subtitle">负责模块六（看板详情）、模块七（Scrum 链路）、模块八（统计度量）</div>
-          </div>
-        </div>
-        <div class="tag-row">
-          <span class="tag">模块六</span>
-          <span class="tag">模块七</span>
-          <span class="tag">模块八</span>
-          <span class="tag">@dnd-kit</span>
-        </div>
-        <h3>汇报重点</h3>
-        <ol>
-          <li><strong>看板详情（核心）</strong>：列 × 泳道 × 卡片、拖拽排序、卡片详情面板
-            <ul>
-              <li><code>BoardPage</code>、<code>BoardDetailService</code>、<code>CardController</code></li>
-              <li>技术点：@dnd-kit 拖拽、乐观更新</li>
-            </ul>
-          </li>
-          <li><strong>Scrum 专项流程</strong>：产品路线图 → 里程碑 → Sprint 看板链路（<code>ScrumChainService</code>）</li>
-          <li><strong>统计与度量</strong>：燃尽图、时间线、图表板、项目级统计（<code>BoardStatsPage</code>、<code>BurndownService</code>）</li>
-          <li><strong>跨看板引用</strong>：引用卡片同步机制</li>
-        </ol>
-        <div class="demo-path">
-          <strong>演示路径：</strong> <code>/board/3</code>（拖拽卡片）→ <code>/board/3/stats</code>（燃尽图）→ <code>/board/3/timeline</code>、<code>/board/3/charts</code>
-        </div>
-        <p style="margin-top:10px"><strong>可强调：</strong>这是系统最核心的业务价值，Scrum 全流程已打通。</p>
-      </div>
-
-      <div class="member-card d">
-        <div class="member-header">
-          <div class="member-badge">D</div>
-          <div>
-            <div class="member-title">脑图 + 实时协作 + 导入导出 + 工程化</div>
-            <div class="member-subtitle">负责模块九～十二（脑图、WebSocket、导入导出、NFR/UI）</div>
-          </div>
-        </div>
-        <div class="tag-row">
-          <span class="tag">模块九</span>
-          <span class="tag">模块十</span>
-          <span class="tag">模块十一</span>
-          <span class="tag">模块十二</span>
-          <span class="tag">simple-mind-map</span>
-        </div>
-        <h3>汇报重点</h3>
-        <ol>
-          <li><strong>脑图编辑器（最新成果）</strong>：从 ReactFlow 升级为 simple-mind-map
-            <ul>
-              <li>14 种布局切换、节点增删改、自动保存、JSON/XMind 导入</li>
-              <li><code>MindMapEditor.tsx</code>、<code>MindMapPage.tsx</code>、<code>MindmapService</code></li>
-            </ul>
-          </li>
-          <li><strong>实时协作</strong>：WebSocket 推送、乐观锁防冲突（<code>WebSocketConfig</code>、<code>BoardWebSocketHandler</code>）</li>
-          <li><strong>导入导出</strong>：看板/脑图 JSON 导出、看板导入</li>
-          <li><strong>工程质量</strong>：联调脚本 30/30、<code>docs/ER.md</code> + <code>docs/UI-DESIGN.md</code>、UI 主题统一</li>
-        </ol>
-        <div class="demo-path">
-          <strong>演示路径：</strong> <code>/mindmap/1</code>（切换布局、加节点）→ 双窗口 WebSocket 演示 → 运行 <code>scripts/integration-test.ps1</code>
-        </div>
-        <p style="margin-top:10px"><strong>可强调：</strong>脑图是近期重点迭代；联调脚本证明前后端接口稳定。</p>
-      </div>
-    </section>
-
-    <section>
-      <h2>分工对照表</h2>
+      <h2>团队成员与任务书分工</h2>
       <table>
         <thead>
           <tr>
-            <th>成员</th>
-            <th>模块</th>
-            <th>核心页面 / 文件</th>
-            <th>演示入口</th>
+            <th>姓名</th>
+            <th>角色</th>
+            <th>任务书主要职责</th>
+            <th>代码量预估</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>A</strong></td>
-            <td>1、2</td>
-            <td><code>AuthController</code>、<code>TopBar</code>、<code>Sidebar</code></td>
-            <td><code>/login</code>、全局导航</td>
+            <td><strong>张茗杰</strong></td>
+            <td>组长 / Scrum Master<br>产品负责人 / 后端开发</td>
+            <td>需求整理、用户认证与权限、看板/卡片/成员 API、看板菜单后端、Git 分支管理</td>
+            <td>3000+ 行</td>
           </tr>
           <tr>
-            <td><strong>B</strong></td>
-            <td>3、4、5</td>
-            <td><code>WorkspacePage</code>、<code>ProjectPage</code>、列表页</td>
-            <td><code>/workspace</code>、<code>/projects/1</code></td>
+            <td><strong>殷浩然</strong></td>
+            <td>后端开发负责人</td>
+            <td>架构与数据库设计（ER、3NF）、燃尽图/统计接口、路线图自动生成、导入导出后端、操作日志</td>
+            <td>2800+ 行</td>
           </tr>
           <tr>
-            <td><strong>C</strong></td>
-            <td>6、7、8</td>
-            <td><code>BoardPage</code>、统计页、Scrum 服务</td>
-            <td><code>/board/3</code>、燃尽图</td>
+            <td><strong>钟礼豪</strong></td>
+            <td>前端开发负责人</td>
+            <td>前端框架、工作台、看板详情页（列/泳道/拖拽）、脑图编辑器、WebSocket、ECharts 燃尽图</td>
+            <td>3500+ 行</td>
           </tr>
           <tr>
-            <td><strong>D</strong></td>
-            <td>9～12</td>
-            <td><code>MindMapEditor</code>、WebSocket、联调脚本</td>
-            <td><code>/mindmap/1</code>、integration-test</td>
+            <td><strong>臧传杨</strong></td>
+            <td>测试与文档 / 前端开发</td>
+            <td>单元/集成测试、用户手册、个人看板/脑图列表、筛选与动态组件、演示视频</td>
+            <td>2500+ 行</td>
           </tr>
         </tbody>
       </table>
     </section>
 
     <section>
-      <h2>现场汇报建议</h2>
-      <ol class="tips">
-        <li><strong>每人带电脑</strong>，提前启动前后端（<code>npm run dev</code> + <code>mvn spring-boot:run</code>），避免现场装依赖。</li>
-        <li><strong>按 A → B → C → D 顺序</strong>演示，形成「登录 → 工作台 → 看板 → 脑图」完整故事线。</li>
-        <li><strong>每人准备 2～3 个代码文件</strong>即可，优先展示自己负责模块的 Service + Page。</li>
-        <li><strong>统一口径</strong>：目前为中期版本，核心 Scrum 链路已通，脑图已重构；后续可做性能优化、移动端适配、权限细粒度等。</li>
+      <h2>Sprint 进度（对照任务书）</h2>
+      <table class="sprint-timeline">
+        <thead>
+          <tr>
+            <th>阶段</th>
+            <th>时间</th>
+            <th>目标</th>
+            <th>状态</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Sprint 0</td>
+            <td>6/15–16</td>
+            <td>脚手架、JWT 认证、数据库 ER、Git 初始化</td>
+            <td>✅ 已完成</td>
+          </tr>
+          <tr>
+            <td>Sprint 1</td>
+            <td>6/17–21</td>
+            <td>工作台、个人看板/脑图、项目视图、看板基础</td>
+            <td>✅ 已完成</td>
+          </tr>
+          <tr>
+            <td>Sprint 2</td>
+            <td>6/22–25</td>
+            <td>看板详情（泳道/筛选/菜单）、路线图自动生成</td>
+            <td>✅ 基本完成</td>
+          </tr>
+          <tr>
+            <td>Sprint 3</td>
+            <td>6/26–27</td>
+            <td>Sprint 燃尽图、脑图编辑器完善、集成测试与演示</td>
+            <td>🔄 进行中</td>
+          </tr>
+          <tr>
+            <td><strong>中期检查</strong></td>
+            <td><strong>6/23 08:30</strong></td>
+            <td>演示已完成功能，北 516 代码检查</td>
+            <td><strong>本次汇报</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>中期汇报分工（按成员）</h2>
+
+      <div class="member-card m1">
+        <div class="member-header">
+          <div class="member-avatar">张</div>
+          <div>
+            <div class="member-name">张茗杰</div>
+            <div class="member-role">组长 · Scrum Master · 产品负责人 / 后端开发</div>
+          </div>
+        </div>
+        <div class="tag-row">
+          <span class="tag tag-lead">组长</span>
+          <span class="tag">模块一</span>
+          <span class="tag">模块二</span>
+          <span class="tag">认证</span>
+          <span class="tag">权限</span>
+          <span class="tag">Git</span>
+        </div>
+        <h3>任务书对应工作</h3>
+        <ul>
+          <li>需求整理与产品待办列表管理、Scrum Master 协调</li>
+          <li>用户认证（JWT）、项目/看板/卡片/成员 CRUD API</li>
+          <li>看板菜单后端：周期、可见性、归档、回收站</li>
+          <li>Git 仓库初始化、分支管理与代码审查</li>
+        </ul>
+        <h3>汇报 &amp; 演示重点</h3>
+        <ol>
+          <li><strong>开场（30 秒）</strong>：项目背景、技术栈、整体进度、四人分工概述</li>
+          <li><strong>认证与全局</strong>：登录注册、路由守卫、顶部导航、通知中心、新建看板/脑图
+            <ul>
+              <li>后端：<code>AuthController</code>、<code>SecurityConfig</code>、<code>GlobalController</code></li>
+              <li>前端：<code>LoginPage</code>、<code>TopBar</code>、<code>Sidebar</code>、<code>useAuthStore</code></li>
+            </ul>
+          </li>
+          <li><strong>API 规范</strong>：统一 <code>ApiResponse</code>、Swagger、全局异常处理</li>
+        </ol>
+        <div class="demo-path">
+          <strong>演示路径：</strong> <code>/login</code> → 登录 → 全局导航 → 通知 → 新建看板
+        </div>
+      </div>
+
+      <div class="member-card m2">
+        <div class="member-header">
+          <div class="member-avatar">殷</div>
+          <div>
+            <div class="member-name">殷浩然</div>
+            <div class="member-role">后端开发负责人 · 架构 / 数据库 / 核心业务逻辑</div>
+          </div>
+        </div>
+        <div class="tag-row">
+          <span class="tag">模块七</span>
+          <span class="tag">模块八</span>
+          <span class="tag">ER 设计</span>
+          <span class="tag">燃尽图</span>
+          <span class="tag">自动生成</span>
+        </div>
+        <h3>任务书对应工作</h3>
+        <ul>
+          <li>项目架构设计、数据库 ER 图（3NF）—— <code>docs/ER.md</code></li>
+          <li>燃尽图与统计接口 —— <code>BurndownService</code></li>
+          <li>产品路线图 → 里程碑 → Sprint 看板自动生成 —— <code>ScrumChainService</code></li>
+          <li>导入导出后端、操作日志记录 —— <code>activity_logs</code></li>
+        </ul>
+        <h3>汇报 &amp; 演示重点</h3>
+        <ol>
+          <li><strong>数据模型</strong>：项目—看板—列—泳道—卡片关系，展示 ER 图</li>
+          <li><strong>Scrum 自动生成链路</strong>：路线图规划里程碑 → 自动创建里程碑看板 → Sprint 规划 → 自动创建 Sprint 看板</li>
+          <li><strong>统计度量</strong>：燃尽图数据计算、项目级统计接口</li>
+        </ol>
+        <div class="demo-path">
+          <strong>演示路径：</strong> 项目 Scrum 链路演示 → <code>/board/3/stats</code> 燃尽图 → 展示 <code>docs/ER.md</code>
+        </div>
+      </div>
+
+      <div class="member-card m3">
+        <div class="member-header">
+          <div class="member-avatar">钟</div>
+          <div>
+            <div class="member-name">钟礼豪</div>
+            <div class="member-role">前端开发负责人 · 核心交互 / 脑图 / 实时协作</div>
+          </div>
+        </div>
+        <div class="tag-row">
+          <span class="tag">模块三</span>
+          <span class="tag">模块六</span>
+          <span class="tag">模块九</span>
+          <span class="tag">模块十</span>
+          <span class="tag">@dnd-kit</span>
+          <span class="tag">simple-mind-map</span>
+        </div>
+        <h3>任务书对应工作</h3>
+        <ul>
+          <li>前端框架搭建：路由、状态管理、布局组件</li>
+          <li>工作台四象限：近期事项、星标看板、最近访问、卡片动态</li>
+          <li>看板详情页：列/泳道/卡片拖拽、筛选面板、看板菜单</li>
+          <li>脑图编辑器（simple-mind-map，14 种布局）、WebSocket 实时协作</li>
+        </ul>
+        <h3>汇报 &amp; 演示重点</h3>
+        <ol>
+          <li><strong>工作台</strong>：<code>WorkspacePage</code> 四模块展示（含高度限制与数量控制）</li>
+          <li><strong>看板核心</strong>：拖拽排序、泳道管理、卡片详情抽屉 —— <code>BoardPage</code></li>
+          <li><strong>脑图编辑器</strong>：布局切换、节点增删改、自动保存 —— <code>/mindmap/1</code></li>
+          <li><strong>WebSocket</strong>：卡片变更实时推送（双窗口演示）</li>
+        </ol>
+        <div class="demo-path">
+          <strong>演示路径：</strong> <code>/workspace</code> → <code>/board/3</code>（拖拽）→ <code>/mindmap/1</code>（脑图）
+        </div>
+      </div>
+
+      <div class="member-card m4">
+        <div class="member-header">
+          <div class="member-avatar">臧</div>
+          <div>
+            <div class="member-name">臧传杨</div>
+            <div class="member-role">测试与文档 / 前端开发 · 列表页 / 质量保障</div>
+          </div>
+        </div>
+        <div class="tag-row">
+          <span class="tag">模块四</span>
+          <span class="tag">模块五</span>
+          <span class="tag">模块十一</span>
+          <span class="tag">模块十二</span>
+          <span class="tag">集成测试</span>
+        </div>
+        <h3>任务书对应工作</h3>
+        <ul>
+          <li>个人看板/脑图列表：新建、筛选、排序、标星、归档 —— <code>MyBoardsPage</code>、<code>MindMapListPage</code></li>
+          <li>项目看板视图：成员管理、统计入口 —— <code>ProjectPage</code></li>
+          <li>筛选面板与动态组件、看板导入导出前端</li>
+          <li>单元/集成测试、用户手册、演示视频、<code>docs/UI-DESIGN.md</code></li>
+        </ul>
+        <h3>汇报 &amp; 演示重点</h3>
+        <ol>
+          <li><strong>项目管理</strong>：项目详情、成员邀请/移除、角色管理</li>
+          <li><strong>个人资源</strong>：看板/脑图 CRUD、归档恢复、复制移动</li>
+          <li><strong>导入导出</strong>：看板 JSON 导出、脑图 JSON/XMind 导入</li>
+          <li><strong>工程质量</strong>：运行 <code>scripts/integration-test.ps1</code>（30/30 通过）、UI 主题统一</li>
+        </ol>
+        <div class="demo-path">
+          <strong>演示路径：</strong> <code>/projects/1</code> → <code>/my/boards</code> → <code>/my/mindmaps</code> → 联调脚本
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>汇报顺序与对照表</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>顺序</th>
+            <th>成员</th>
+            <th>负责模块</th>
+            <th>核心文件</th>
+            <th>演示入口</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1（开场）</td>
+            <td><strong>张茗杰</strong></td>
+            <td>1、2</td>
+            <td><code>AuthController</code>、<code>GlobalController</code>、<code>TopBar</code></td>
+            <td><code>/login</code></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><strong>殷浩然</strong></td>
+            <td>7、8 + 架构</td>
+            <td><code>ScrumChainService</code>、<code>BurndownService</code>、<code>ER.md</code></td>
+            <td>Scrum 链路、燃尽图</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><strong>钟礼豪</strong></td>
+            <td>3、6、9、10</td>
+            <td><code>WorkspacePage</code>、<code>BoardPage</code>、<code>MindMapEditor</code></td>
+            <td><code>/workspace</code>、<code>/board/3</code></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><strong>臧传杨</strong></td>
+            <td>4、5、11、12</td>
+            <td><code>ProjectPage</code>、列表页、<code>integration-test.ps1</code></td>
+            <td><code>/projects/1</code>、<code>/my/boards</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top:12px">推荐演示故事线：<strong>登录 → 工作台 → 项目/列表 → 看板拖拽 → Scrum 链路/燃尽图 → 脑图 → 联调测试</strong></p>
+    </section>
+
+    <section>
+      <h2>6 月 23 日工作计划（任务书）</h2>
+      <ul>
+        <li>中期检查：演示已完成功能，根据教师反馈调整</li>
+        <li>同步开始/继续产品路线图自动生成逻辑完善</li>
+        <li>全员参与，北 516 现场代码讲解</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>现场注意事项</h2>
+      <ol>
+        <li><strong>提前启动</strong>：后端 <code>mvn spring-boot:run</code>，前端 <code>npm run dev</code>，账号 <code>zhong / 123456</code></li>
+        <li><strong>每人 2～3 个代码文件</strong>：优先 Service + Page，能说明自己写的部分</li>
+        <li><strong>统一口径</strong>：中期版本，核心 Scrum 链路已通，脑图已用 simple-mind-map 重构</li>
+        <li><strong>后续计划</strong>（Sprint 3）：燃尽图完善、集成测试收尾、演示视频、课程报告</li>
       </ol>
     </section>
 
@@ -405,40 +540,26 @@
         <thead>
           <tr>
             <th>可能的问题</th>
-            <th>建议由谁回答</th>
+            <th>建议回答人</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>前后端如何通信？JWT 怎么传？</td>
-            <td>A</td>
-          </tr>
-          <tr>
-            <td>数据库表结构设计？</td>
-            <td>B（指 ER 图）</td>
-          </tr>
-          <tr>
-            <td>看板拖拽怎么实现？</td>
-            <td>C</td>
-          </tr>
-          <tr>
-            <td>脑图数据怎么存？布局怎么切换？</td>
-            <td>D</td>
-          </tr>
-          <tr>
-            <td>怎么保证接口没问题？</td>
-            <td>D（跑联调脚本）</td>
-          </tr>
-          <tr>
-            <td>四人怎么分工开发的？</td>
-            <td>各讲自己模块 + Git 12 个 feat 模块提交记录</td>
-          </tr>
+          <tr><td>项目背景与设计目标？Scrum 链路怎么闭环？</td><td>张茗杰</td></tr>
+          <tr><td>数据库表结构、ER 设计、3NF？</td><td>殷浩然</td></tr>
+          <tr><td>里程碑/Sprint 看板如何自动生成？</td><td>殷浩然</td></tr>
+          <tr><td>看板拖拽、泳道、WebSocket 怎么实现？</td><td>钟礼豪</td></tr>
+          <tr><td>工作台、脑图编辑器、布局切换？</td><td>钟礼豪</td></tr>
+          <tr><td>个人看板/脑图管理、项目成员权限？</td><td>臧传杨</td></tr>
+          <tr><td>怎么保证接口质量？集成测试？</td><td>臧传杨</td></tr>
+          <tr><td>四人如何分工、Git 提交记录？</td><td>张茗杰概述 + 各讲各模块</td></tr>
+          <tr><td>为什么用 React 而不是任务书的 Vue？</td><td>张茗杰（技术选型调整，功能等价）</td></tr>
         </tbody>
       </table>
     </section>
 
     <footer>
-      Scrum 管理软件 · 综合课设 · 生成于项目仓库 docs/分工.html
+      哈尔滨工业大学（威海）软件工程综合课程设计 · 第 5 组 · docs/分工.html<br>
+      依据《软件综合课程设计任务书》与项目实际完成情况整理
     </footer>
   </div>
 </body>
