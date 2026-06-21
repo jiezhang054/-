@@ -19,11 +19,16 @@ npm run dev
 cd backend
 mvn spring-boot:run
 ```
-API: http://localhost:8080/api
+API: http://localhost:8080/api  
+Swagger: http://localhost:8080/swagger-ui.html
 
-> 后端代码暂未上传至远程仓库。
+## 文档
 
-## 功能
+- `需求.html` — 功能需求规格
+- `docs/ER.md` — 数据库 ER 设计
+- `docs/UI-DESIGN.md` — UI 设计说明
+
+## 联调测试
 
 - 工作台（近期事项、星标、最近访问、动态）
 - 看板详情（列×泳道×卡片拖拽）
@@ -33,6 +38,12 @@ API: http://localhost:8080/api
 - 跨看板引用卡片同步
 - WebSocket 实时协作
 - 中英文国际化
+
+## 联调测试
+
+```powershell
+powershell -File scripts/integration-test.ps1
+```
 
 ## 技术栈
 
