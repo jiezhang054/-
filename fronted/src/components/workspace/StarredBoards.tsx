@@ -22,13 +22,15 @@ export function StarredBoards({ boards, onUnstar, onArchive }: Props) {
   ];
 
   return (
-    <Card title={t('starredBoards')} size="small">
+    <Card className="workspace-panel workspace-panel--starred" title={t('starredBoards')} size="small">
       {boards.length === 0 ? (
         <Empty description="暂无星标看板，去看板列表中点击☆标星" image={Empty.PRESENTED_IMAGE_SIMPLE} />
       ) : (
-        <List
-          dataSource={boards}
-          renderItem={(b) => (
+        <div className="workspace-panel__scroll">
+          <List
+            dataSource={boards}
+            split={false}
+            renderItem={(b) => (
             <Dropdown menu={{ items: menu(b) }} trigger={['contextMenu']}>
               <List.Item style={{ cursor: 'pointer' }} onClick={() => navigate(`/board/${b.id}`)}>
                 <StarFilled style={{ color: '#faad14', marginRight: 8 }} />
@@ -37,7 +39,8 @@ export function StarredBoards({ boards, onUnstar, onArchive }: Props) {
               </List.Item>
             </Dropdown>
           )}
-        />
+          />
+        </div>
       )}
     </Card>
   );

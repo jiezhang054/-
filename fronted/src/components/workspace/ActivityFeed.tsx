@@ -22,29 +22,34 @@ export function ActivityFeed({ activities, hasMore, loadingMore, onLoadMore, onI
   };
 
   return (
-    <Card title={t('activityFeed')} size="small">
+    <Card className="workspace-panel workspace-panel--activity" title={t('activityFeed')} size="small">
       {activities.length === 0 ? (
         <Empty description="暂无动态" image={Empty.PRESENTED_IMAGE_SIMPLE} />
       ) : (
         <>
-          <List
-            dataSource={activities}
-            renderItem={(a) => (
-              <List.Item style={{ cursor: a.boardId ? 'pointer' : 'default' }} onClick={() => a.boardId && handleClick(a)}>
-                <List.Item.Meta
-                  title={<>{a.userName} {a.action}</>}
-                  description={
-                    <>
-                      {a.cardTitle && <span>{a.cardTitle} · </span>}
-                      {dayjs(a.createdAt).format('MM-DD HH:mm')}
-                    </>
-                  }
-                />
-              </List.Item>
-            )}
-          />
+          <div className="workspace-panel__scroll">
+            <List
+              dataSource={activities}
+              split={false}
+              renderItem={(a) => (
+                <List.Item style={{ cursor: a.boardId ? 'pointer' : 'default' }} onClick={() => a.boardId && handleClick(a)}>
+                  <List.Item.Meta
+                    title={<>{a.userName} {a.action}</>}
+                    description={
+                      <>
+                        {a.cardTitle && <span>{a.cardTitle} · </span>}
+                        {dayjs(a.createdAt).format('MM-DD HH:mm')}
+                      </>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+          </div>
           {hasMore && (
-            <Button type="link" block loading={loadingMore} onClick={onLoadMore}>查看更多</Button>
+            <div className="workspace-panel__load-more">
+              <Button type="link" block loading={loadingMore} onClick={onLoadMore}>查看更多</Button>
+            </div>
           )}
         </>
       )}

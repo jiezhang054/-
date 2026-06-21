@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Row, Col, Button, message } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +8,9 @@ import { StarredBoards } from '../../components/workspace/StarredBoards';
 import { RecentVisits } from '../../components/workspace/RecentVisits';
 import { ActivityFeed } from '../../components/workspace/ActivityFeed';
 import { workspaceApi, type WorkspaceTask } from '../../api/boards';
+import { WORKSPACE_DISPLAY_LIMITS } from '../../constants/workspace';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import '../../styles/workspace.css';
 import type { ActivityItem } from '../../types/board';
 
 export function WorkspacePage() {
@@ -16,8 +18,8 @@ export function WorkspacePage() {
   const queryClient = useQueryClient();
   const isWide = useMediaQuery('(min-width: 1200px)');
   const colSpan = isWide ? 6 : 12;
-  const [activityOffset, setActivityOffset] = useState(0);
   const [extraActivities, setExtraActivities] = useState<ActivityItem[]>([]);
+  const [hasMoreActivities, setHasMoreActivities] = useState(false);
 
   const { data, refetch, isFetching, isLoading } = useQuery({
     queryKey: ['workspace'],
@@ -44,9 +46,14 @@ export function WorkspacePage() {
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['workspace'] });
     queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    setActivityOffset(0);
     setExtraActivities([]);
   };
+
+  useEffect(() => {
+    setHasMoreActivities(
+      (data?.activities?.length ?? 0) >= WORKSPACE_DISPLAY_LIMITS.activityPageSize,
+    );
+  }, [data?.activities]);
 
   const quickMove = useMutation({
     mutationFn: ({ cardId, columnId }: { cardId: number; columnId: number }) =>
@@ -71,10 +78,13 @@ export function WorkspacePage() {
   });
 
   const loadMoreActivities = useMutation({
-    mutationFn: () => workspaceApi.activities(activityOffset + 20, 20),
+    mutationFn: () => workspaceApi.activities(
+      WORKSPACE_DISPLAY_LIMITS.activityPageSize + extraActivities.length,
+      WORKSPACE_DISPLAY_LIMITS.activityPageSize,
+    ),
     onSuccess: (items) => {
       setExtraActivities((prev) => [...prev, ...items]);
-      setActivityOffset((o) => o + 20);
+      setHasMoreActivities(items.length >= WORKSPACE_DISPLAY_LIMITS.activityPageSize);
     },
   });
 
@@ -82,10 +92,13 @@ export function WorkspacePage() {
     navigate(`/board/${task.boardId}?card=${task.id}`);
   };
 
-  const activities = [...(data?.activities ?? []), ...extraActivities];
+  const activities = [
+    ...(data?.activities ?? []).slice(0, WORKSPACE_DISPLAY_LIMITS.activities),
+    ...extraActivities,
+  ];
 
   return (
-    <div>
+    <div className="workspace-page">
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
         <h2 style={{ margin: 0 }}>工作台</h2>
         <Button icon={<ReloadOutlined />} loading={isFetching} onClick={() => { refetch(); invalidate(); }}>
@@ -118,7 +131,7 @@ export function WorkspacePage() {
           <Col span={colSpan}>
             <ActivityFeed
               activities={activities}
-              hasMore={(data?.activities?.length ?? 0) >= 20}
+              hasMore={hasMoreActivities}
               loadingMore={loadMoreActivities.isPending}
               onLoadMore={() => loadMoreActivities.mutate()}
             />

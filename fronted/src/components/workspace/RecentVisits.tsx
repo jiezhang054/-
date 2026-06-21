@@ -5,6 +5,9 @@ import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import type { MenuProps } from 'antd';
 import type { RecentVisit } from '../../types/board';
+import { WORKSPACE_DISPLAY_LIMITS } from '../../constants/workspace';
+
+const DISPLAY_LIMIT = WORKSPACE_DISPLAY_LIMITS.recentVisits;
 
 const ICONS = {
   board: <AppstoreOutlined />,
@@ -41,13 +44,18 @@ export function RecentVisits({ visits, onRemove }: Props) {
     { key: 'remove', label: '移除记录', icon: <DeleteOutlined />, danger: true, onClick: () => onRemove?.(v.id) },
   ];
 
+  const visibleVisits = visits.slice(0, DISPLAY_LIMIT);
+  const hiddenCount = visits.length - visibleVisits.length;
+
   return (
-    <Card title={t('recentVisits')} size="small">
+    <Card className="workspace-panel workspace-panel--visits" title={t('recentVisits')} size="small">
       {visits.length === 0 ? (
         <Empty description="暂无最近访问" image={Empty.PRESENTED_IMAGE_SIMPLE} />
       ) : (
-        <Timeline
-          items={visits.map((v) => ({
+        <>
+          <div className="workspace-panel__scroll">
+            <Timeline
+              items={visibleVisits.map((v) => ({
             dot: ICONS[v.type],
             children: (
               <Dropdown menu={{ items: menu(v) }} trigger={['contextMenu']}>
@@ -59,8 +67,15 @@ export function RecentVisits({ visits, onRemove }: Props) {
                 </span>
               </Dropdown>
             ),
-          }))}
-        />
+              }))}
+            />
+          </div>
+          {hiddenCount > 0 && (
+            <div className="workspace-panel__footer">
+              共 {visits.length} 条，仅显示最近 {DISPLAY_LIMIT} 条
+            </div>
+          )}
+        </>
       )}
     </Card>
   );

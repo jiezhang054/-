@@ -17,13 +17,19 @@ export function RecentTasks({ tasks, columnOptions, onCardClick, onQuickMove }: 
   const { t } = useTranslation();
 
   return (
-    <Card title={<><Badge count={tasks.length} offset={[10, 0]}>{t('recentTasks')}</Badge></>} size="small">
+    <Card
+      className="workspace-panel workspace-panel--tasks"
+      title={<><Badge count={tasks.length} offset={[10, 0]}>{t('recentTasks')}</Badge></>}
+      size="small"
+    >
       {tasks.length === 0 ? (
         <Empty description="暂无未完成任务，快去项目看板中添加吧" image={Empty.PRESENTED_IMAGE_SIMPLE} />
       ) : (
-        <List
-          dataSource={tasks}
-          renderItem={(task) => {
+        <div className="workspace-panel__scroll">
+          <List
+            dataSource={tasks}
+            split={false}
+            renderItem={(task) => {
             const type = task.type || 'TASK';
             const memberIds = task.memberIds ?? [];
             const overdue = task.dueDate && dayjs(task.dueDate).isBefore(dayjs(), 'day');
@@ -60,7 +66,8 @@ export function RecentTasks({ tasks, columnOptions, onCardClick, onQuickMove }: 
               </Dropdown>
             );
           }}
-        />
+          />
+        </div>
       )}
     </Card>
   );

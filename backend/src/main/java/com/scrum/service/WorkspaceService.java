@@ -22,7 +22,7 @@ public class WorkspaceService {
         result.put("recentTasks", getRecentTasks(userId));
         result.put("starredBoards", getStarredBoards(userId));
         result.put("recentVisits", getRecentVisits(userId));
-        result.put("activities", getActivities(userId, 0, 20));
+        result.put("activities", getActivities(userId, 0, 10));
         return result;
     }
 
@@ -61,7 +61,7 @@ public class WorkspaceService {
     public List<Map<String, Object>> getRecentVisits(Long userId) {
         return jdbcTemplate.queryForList(
             "SELECT id, target_type as type, target_id as targetId, name, visited_at as visitedAt " +
-            "FROM recent_visits WHERE user_id = ? ORDER BY visited_at DESC LIMIT 50", userId);
+            "FROM recent_visits WHERE user_id = ? ORDER BY visited_at DESC LIMIT 15", userId);
     }
 
     public List<Map<String, Object>> getActivities(Long userId, int offset, int limit) {
