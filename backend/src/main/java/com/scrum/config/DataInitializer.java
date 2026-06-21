@@ -123,7 +123,8 @@ public class DataInitializer implements CommandLineRunner {
 
         jdbcTemplate.update(
             "INSERT INTO mindmaps (name, project_id, owner_id, content) VALUES (?, 1, ?, ?)",
-            "电商重构脑图", ownerId, "{\"nodes\":[],\"edges\":[]}");
+            "电商重构脑图", ownerId,
+            "{\"layout\":\"mindMap\",\"root\":{\"data\":{\"text\":\"电商重构脑图\"},\"children\":[{\"data\":{\"text\":\"需求分析\"},\"children\":[]},{\"data\":{\"text\":\"技术选型\"},\"children\":[{\"data\":{\"text\":\"前端 React\"},\"children\":[]},{\"data\":{\"text\":\"后端 Spring Boot\"},\"children\":[]}]}]}}");
     }
 
     private void insertBoard(long id, String name, String type, boolean swimlanes, String start, String end) {

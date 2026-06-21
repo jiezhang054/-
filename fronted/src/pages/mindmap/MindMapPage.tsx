@@ -1,83 +1,119 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import ReactFlow, { addEdge, Background, Controls, MiniMap, useNodesState, useEdgesState, type Connection, type Node, type Edge } from 'reactflow';
-import 'reactflow/dist/style.css';
-import { Button, Space, message, Spin, Typography } from 'antd';
-import { DownloadOutlined, UploadOutlined, SaveOutlined } from '@ant-design/icons';
+import {
+  Button,
+  Space,
+  message,
+  Spin,
+  Typography,
+  Tooltip,
+  Divider,
+  Select,
+} from 'antd';
+import {
+  DownloadOutlined,
+  UploadOutlined,
+  SaveOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+  ZoomInOutlined,
+  ZoomOutOutlined,
+  CompressOutlined,
+  AimOutlined,
+  BranchesOutlined,
+  PartitionOutlined,
+} from '@ant-design/icons';
 import { myApi } from '../../api/my';
+import { MindMapEditor, type MindMapEditorHandle } from '../../components/mindmap/MindMapEditor';
+import {
+  buildLayoutSelectOptions,
+  parseMindmapContent,
+  parseImportedMindmapJson,
+  serializeMindmapContent,
+  type MindMapLayout,
+  type MindMapPersistedContent,
+} from '../../utils/mindmap';
 
 const { Title } = Typography;
-
-type MindNode = Node<{ label: string }>;
-
-function parseContent(content?: string): { nodes: MindNode[]; edges: Edge[] } {
-  if (!content) return { nodes: [], edges: [] };
-  try {
-    const data = JSON.parse(content);
-    return {
-      nodes: (data.nodes ?? []).map((n: MindNode) => ({
-        ...n,
-        data: { label: String((n.data as { label?: string })?.label ?? '') },
-      })),
-      edges: data.edges ?? [],
-    };
-  } catch {
-    return { nodes: [], edges: [] };
-  }
-}
+const layoutOptions = buildLayoutSelectOptions();
 
 export function MindMapPage() {
   const { mindmapId } = useParams();
   const id = Number(mindmapId);
+  const editorRef = useRef<MindMapEditorHandle>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const [name, setName] = useState('');
+  const lastSerializedRef = useRef<string>('');
+  const [editorContent, setEditorContent] = useState<MindMapPersistedContent | null>(null);
+  const [layout, setLayout] = useState<MindMapLayout>('logicalStructure');
 
   const { data, isLoading } = useQuery({
     queryKey: ['mindmap', id],
     queryFn: () => myApi.getMindmap(id),
     enabled: !!id,
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
   });
 
-  const [nodes, setNodes, onNodesChange] = useNodesState<{ label: string }>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const initialContent = useMemo(
+    () => (data ? parseMindmapContent(data.content, data.name) : null),
+    [data?.content, data?.name],
+  );
 
   useEffect(() => {
-    if (data) {
-      setName(data.name);
-      const parsed = parseContent(data.content);
-      if (parsed.nodes.length) {
-        setNodes(parsed.nodes);
-        setEdges(parsed.edges);
-      } else {
-        setNodes([
-          { id: '1', position: { x: 250, y: 0 }, data: { label: data.name }, type: 'input' },
-        ]);
-        setEdges([]);
-      }
+    if (initialContent) {
+      lastSerializedRef.current = serializeMindmapContent(initialContent);
+      setLayout(initialContent.layout);
     }
-  }, [data, setNodes, setEdges]);
+  }, [id, initialContent]);
 
-  const persist = useCallback((n: MindNode[], e: Edge[]) => {
+  const persist = useCallback((content: MindMapPersistedContent) => {
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      myApi.updateContent(id, JSON.stringify({ nodes: n, edges: e })).catch(() => {});
+      myApi.updateContent(id, serializeMindmapContent(content)).catch(() => {});
     }, 800);
   }, [id]);
 
-  useEffect(() => {
-    if (nodes.length && data) persist(nodes, edges);
-  }, [nodes, edges, data, persist]);
+  const handleChange = useCallback((content: MindMapPersistedContent) => {
+    const serialized = serializeMindmapContent(content);
+    if (serialized === lastSerializedRef.current) return;
+    lastSerializedRef.current = serialized;
+    setEditorContent(content);
+    setLayout(content.layout);
+    persist(content);
+  }, [persist]);
 
-  const onConnect = useCallback((params: Connection) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
+  const handleLayoutChange = (nextLayout: MindMapLayout) => {
+    setLayout(nextLayout);
+    editorRef.current?.setLayout(nextLayout);
+    window.setTimeout(() => {
+      const content = editorRef.current?.getContent();
+      if (!content) return;
+      const serialized = serializeMindmapContent(content);
+      if (serialized === lastSerializedRef.current) return;
+      lastSerializedRef.current = serialized;
+      setEditorContent(content);
+      persist(content);
+    }, 120);
+  };
+
+  const saveNow = async () => {
+    const content = editorRef.current?.getContent() ?? editorContent ?? initialContent;
+    if (!content) return;
+    await myApi.updateContent(id, serializeMindmapContent(content));
+    message.success('已保存');
+  };
 
   const exportJson = () => {
-    const blob = new Blob([JSON.stringify({ nodes, edges }, null, 2)], { type: 'application/json' });
+    const content = editorRef.current?.getContent() ?? editorContent ?? initialContent;
+    if (!content) return;
+    const blob = new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${name || 'mindmap'}.json`;
+    a.download = `${data?.name || 'mindmap'}.json`;
     a.click();
+    URL.revokeObjectURL(url);
     message.success('已导出 JSON');
   };
 
@@ -91,40 +127,83 @@ export function MindMapPage() {
       const reader = new FileReader();
       reader.onload = (ev) => {
         try {
-          const parsed = parseContent(ev.target?.result as string);
-          setNodes(parsed.nodes);
-          setEdges(parsed.edges);
+          const content = parseImportedMindmapJson(ev.target?.result as string);
+          editorRef.current?.setData(content);
+          lastSerializedRef.current = serializeMindmapContent(content);
+          setEditorContent(content);
+          setLayout(content.layout);
+          persist(content);
           message.success('导入成功');
-        } catch { message.error('JSON 格式错误'); }
+        } catch {
+          message.error('JSON 格式错误');
+        }
       };
       reader.readAsText(file);
     };
     input.click();
   };
 
-  const saveNow = async () => {
-    await myApi.updateContent(id, JSON.stringify({ nodes, edges }));
-    message.success('已保存');
-  };
-
-  if (isLoading) return <Spin style={{ display: 'block', margin: '100px auto' }} />;
+  if (isLoading || !data || !initialContent) {
+    return <Spin style={{ display: 'block', margin: '100px auto' }} />;
+  }
 
   return (
     <div style={{ height: 'calc(100vh - var(--header-height))', display: 'flex', flexDirection: 'column' }}>
       <div className="mindmap-toolbar">
-        <Title level={5} style={{ margin: 0 }}>{name}</Title>
-        <Space>
+        <div>
+          <Title level={5} style={{ margin: 0 }}>{data.name}</Title>
+          <div className="mindmap-toolbar-hint">
+            Tab 子节点 · Enter 兄弟节点 · Delete 删除 · 滚轮缩放 · 拖拽移动节点
+          </div>
+        </div>
+        <Space className="mindmap-toolbar-actions" wrap>
+          <Select
+            className="mindmap-layout-select"
+            value={layout}
+            onChange={handleLayoutChange}
+            options={layoutOptions}
+            popupMatchSelectWidth={false}
+            suffixIcon={<PartitionOutlined />}
+            optionFilterProp="label"
+            showSearch
+            placeholder="展示形式"
+          />
+          <Divider type="vertical" />
+          <Tooltip title="添加子节点 (Tab)">
+            <Button icon={<BranchesOutlined />} onClick={() => editorRef.current?.insertChild()}>子节点</Button>
+          </Tooltip>
+          <Tooltip title="添加兄弟节点 (Enter)">
+            <Button icon={<PlusOutlined />} onClick={() => editorRef.current?.insertSibling()}>兄弟节点</Button>
+          </Tooltip>
+          <Tooltip title="删除节点 (Delete)">
+            <Button icon={<DeleteOutlined />} danger onClick={() => editorRef.current?.removeNode()}>删除</Button>
+          </Tooltip>
+          <Divider type="vertical" />
+          <Tooltip title="放大">
+            <Button icon={<ZoomInOutlined />} onClick={() => editorRef.current?.zoomIn()} />
+          </Tooltip>
+          <Tooltip title="缩小">
+            <Button icon={<ZoomOutOutlined />} onClick={() => editorRef.current?.zoomOut()} />
+          </Tooltip>
+          <Tooltip title="适应画布">
+            <Button icon={<CompressOutlined />} onClick={() => editorRef.current?.fit()} />
+          </Tooltip>
+          <Tooltip title="回到根节点">
+            <Button icon={<AimOutlined />} onClick={() => editorRef.current?.centerRoot()} />
+          </Tooltip>
+          <Divider type="vertical" />
           <Button icon={<SaveOutlined />} type="primary" onClick={saveNow}>保存</Button>
           <Button icon={<DownloadOutlined />} onClick={exportJson}>导出 JSON</Button>
           <Button icon={<UploadOutlined />} onClick={importJson}>导入 JSON</Button>
         </Space>
       </div>
-      <div style={{ flex: 1 }}>
-        <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} fitView>
-          <Background color="#e8e8e8" gap={16} />
-          <Controls />
-          <MiniMap nodeColor="#1677ff" />
-        </ReactFlow>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <MindMapEditor
+          key={`${id}-${data.content ?? ''}`}
+          ref={editorRef}
+          content={initialContent}
+          onChange={handleChange}
+        />
       </div>
     </div>
   );

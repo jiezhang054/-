@@ -1,0 +1,65 @@
+.mindmap-editor {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.mindmap-container {
+  width: 100%;
+  height: 100%;
+}
+
+.mindmap-container * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.mindmap-minimap {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 200px;
+  height: 120px;
+  background: #fff;
+  border: 1px solid var(--color-border, #e8e8e8);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: var(--shadow-card, 0 2px 8px rgba(0, 0, 0, 0.08));
+  overflow: hidden;
+  z-index: 10;
+}
+
+.mindmap-minimap-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.mindmap-minimap-inner svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.mindmap-minimap-viewbox {
+  position: absolute;
+  border: 2px solid #1677ff;
+  background: rgba(22, 119, 255, 0.08);
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.mindmap-toolbar-hint {
+  font-size: 12px;
+  color: var(--color-text-secondary, #8c8c8c);
+}
+
+.mindmap-layout-select {
+  min-width: 168px;
+}
+
+.mindmap-toolbar-actions {
+  flex-wrap: wrap;
+}
