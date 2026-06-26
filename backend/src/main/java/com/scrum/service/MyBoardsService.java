@@ -19,6 +19,7 @@ public class MyBoardsService {
     @Autowired private UserMapper userMapper;
     @Autowired private BoardService boardService;
     @Autowired private ProjectService projectService;
+    @Autowired private BoardChainService boardChainService;
 
     public List<Map<String, Object>> listBoards(Long userId, String filter, String sortBy, String sortDir) {
         StringBuilder sql = new StringBuilder(
@@ -41,7 +42,7 @@ public class MyBoardsService {
 
         for (Map<String, Object> row : rows) {
             Long boardId = ((Number) row.get("id")).longValue();
-            boolean completed = isBoardCompleted(boardId);
+            boolean completed = boardChainService.isBoardCompleted(boardId);
             if ("incomplete".equals(filter) && completed) continue;
             if ("complete".equals(filter) && !completed) continue;
 
@@ -130,7 +131,7 @@ public class MyBoardsService {
 
         User user = userMapper.selectById(userId);
         String displayName = user != null ? user.getDisplayName() : "用户";
-        Map<String, Object> project = projectService.create(userId, displayName + "的个人空间", "个人看板与脑图", "LIGHT");
+        Map<String, Object> project = projectService.create(userId, displayName + "的个人空间", "个人看板与脑图", "LIGHT", null);
         return ((Number) project.get("id")).longValue();
     }
 
@@ -174,21 +175,6 @@ public class MyBoardsService {
     public void restoreBoard(Long userId, Long boardId) {
         ensureBoardAccess(userId, boardId);
         boardService.restoreBoard(boardId);
-    }
-
-    private boolean isBoardCompleted(Long boardId) {
-        List<BoardColumn> cols = columnMapper.selectList(
-            new LambdaQueryWrapper<BoardColumn>().eq(BoardColumn::getBoardId, boardId)
-                .orderByDesc(BoardColumn::getSortOrder).last("LIMIT 1"));
-        if (cols.isEmpty()) return true;
-        Long doneColId = cols.get(0).getId();
-        long total = cardMapper.selectCount(
-            new LambdaQueryWrapper<Card>().eq(Card::getBoardId, boardId).eq(Card::getDeleted, false));
-        if (total == 0) return true;
-        long inDone = cardMapper.selectCount(
-            new LambdaQueryWrapper<Card>().eq(Card::getBoardId, boardId).eq(Card::getDeleted, false)
-                .eq(Card::getColumnId, doneColId));
-        return total == inDone;
     }
 
     private Object firstNonNull(Map<String, Object> row, String... keys) {

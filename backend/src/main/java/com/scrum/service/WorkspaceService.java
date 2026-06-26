@@ -16,6 +16,7 @@ public class WorkspaceService {
     @Autowired private CardMapper cardMapper;
     @Autowired private BoardMapper boardMapper;
     @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired private ActivityLogService activityLogService;
 
     public Map<String, Object> getDashboard(Long userId) {
         Map<String, Object> result = new HashMap<>();
@@ -115,9 +116,10 @@ public class WorkspaceService {
         card.setVersion(card.getVersion() + 1);
         cardMapper.updateById(card);
 
-        jdbcTemplate.update(
-            "INSERT INTO activity_logs (user_id, action, card_id, board_id) VALUES (?, ?, ?, ?)",
-            userId, "快速变更了卡片状态", cardId, card.getBoardId());
+        String colName = jdbcTemplate.queryForObject(
+            "SELECT name FROM board_columns WHERE id = ?", String.class, columnId);
+        activityLogService.record(userId, card.getBoardId(), cardId,
+            "移动了卡片「" + card.getTitle() + "」到「" + (colName != null ? colName : "目标列") + "」");
 
         Map<String, Object> result = new HashMap<>();
         result.put("id", card.getId());

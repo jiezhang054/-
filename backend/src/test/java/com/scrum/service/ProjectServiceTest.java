@@ -1,7 +1,9 @@
 package com.scrum.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scrum.entity.Board;
 import com.scrum.entity.User;
+import com.scrum.mapper.BoardMapper;
 import com.scrum.mapper.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ProjectServiceTest {
     @Autowired private ProjectService projectService;
     @Autowired private UserMapper userMapper;
+    @Autowired private BoardMapper boardMapper;
 
     private Long zhongId;
 
@@ -48,13 +51,17 @@ class ProjectServiceTest {
 
     @Test
     void createUpdateAndStats() {
-        Map<String, Object> created = projectService.create(zhongId, "测试项目", "描述", "SCRUM");
+        Map<String, Object> created = projectService.create(zhongId, "测试项目", "描述", "SCRUM", null);
         Long projectId = ((Number) created.get("id")).longValue();
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> boards = (List<Map<String, Object>>) created.get("boards");
-        assertEquals(1, boards.size());
-        assertEquals("ROADMAP", boards.get(0).get("type"));
+        assertEquals(5, boards.size());
+        assertTrue(boards.stream().anyMatch(b -> "ROADMAP".equals(b.get("type"))));
+        assertTrue(boards.stream().anyMatch(b -> "MILESTONE".equals(b.get("type"))));
+        assertTrue(boards.stream().anyMatch(b -> "SPRINT".equals(b.get("type"))));
+        assertTrue(boards.stream().anyMatch(b -> "DEFECT".equals(b.get("type"))));
+        assertTrue(boards.stream().anyMatch(b -> "RETROSPECTIVE".equals(b.get("type"))));
 
         Map<String, Object> updated = projectService.update(projectId, zhongId, "测试项目2", "新描述");
         assertEquals("测试项目2", updated.get("name"));
@@ -72,7 +79,7 @@ class ProjectServiceTest {
         List<Map<String, Object>> members = projectService.listMembers(1L, zhongId);
         assertTrue(members.size() >= 2);
 
-        Map<String, Object> project = projectService.create(zhongId, "成员测试", null, "LIGHT");
+        Map<String, Object> project = projectService.create(zhongId, "成员测试", null, "LIGHT", null);
         Long projectId = ((Number) project.get("id")).longValue();
 
         Map<String, Object> invited = projectService.inviteMember(projectId, zhongId, "yin", "MEMBER");
@@ -85,6 +92,23 @@ class ProjectServiceTest {
         projectService.removeMember(projectId, zhongId, yin.getId());
         members = projectService.listMembers(projectId, zhongId);
         assertTrue(members.stream().noneMatch(m -> yin.getId().equals(m.get("id"))));
+    }
+
+    @Test
+    void repairIncompleteScrumTemplate() {
+        Map<String, Object> created = projectService.create(zhongId, "残缺模板项目", "描述", "SCRUM", null);
+        Long projectId = ((Number) created.get("id")).longValue();
+
+        Board roadmap = boardMapper.selectOne(new LambdaQueryWrapper<Board>()
+            .eq(Board::getProjectId, projectId).eq(Board::getType, "ROADMAP"));
+        assertNotNull(roadmap);
+        boardMapper.delete(new LambdaQueryWrapper<Board>()
+            .eq(Board::getProjectId, projectId).ne(Board::getId, roadmap.getId()));
+
+        Map<String, Object> repaired = projectService.getById(projectId, zhongId);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> boards = (List<Map<String, Object>>) repaired.get("boards");
+        assertEquals(5, boards.size());
     }
 
     @Test
@@ -107,14 +131,14 @@ class ProjectServiceTest {
 
     @Test
     void archiveRestoreAndListArchived() {
-        Map<String, Object> project = projectService.create(zhongId, "归档测试", null, "LIGHT");
+        Map<String, Object> project = projectService.create(zhongId, "归档测试", null, "LIGHT", null);
         Long projectId = ((Number) project.get("id")).longValue();
 
         projectService.archive(projectId, zhongId);
         Map<String, Object> archivedProject = projectService.getById(projectId, zhongId);
         assertTrue(Boolean.TRUE.equals(archivedProject.get("archived")));
 
-        List<Map<String, Object>> active = projectService.listForUser(zhongId);
+        List<Map<String, Object>> active = projectService.listForUser(zhongId, null);
         assertTrue(active.stream().noneMatch(p -> projectId.equals(((Number) p.get("id")).longValue())));
 
         List<Map<String, Object>> archived = projectService.listArchived(zhongId);

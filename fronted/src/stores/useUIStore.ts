@@ -18,6 +18,8 @@ interface UIState {
   activityDrawerOpen: boolean;
   settingsModalOpen: boolean;
   boardFilter: BoardFilter;
+  batchMode: boolean;
+  selectedCardIds: number[];
   language: 'zh-CN' | 'en-US';
   toggleSidebar: () => void;
   openCardDrawer: (cardId: number) => void;
@@ -29,6 +31,9 @@ interface UIState {
   setSettingsModalOpen: (open: boolean) => void;
   setBoardFilter: (filter: Partial<BoardFilter>) => void;
   clearBoardFilter: () => void;
+  setBatchMode: (on: boolean) => void;
+  toggleCardSelection: (cardId: number) => void;
+  clearCardSelection: () => void;
   setLanguage: (lang: 'zh-CN' | 'en-US') => void;
 }
 
@@ -44,6 +49,8 @@ export const useUIStore = create<UIState>()(
       activityDrawerOpen: false,
       settingsModalOpen: false,
       boardFilter: { keyword: '' },
+      batchMode: false,
+      selectedCardIds: [],
       language: 'zh-CN',
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       openCardDrawer: (cardId) => set({ selectedCardId: cardId, cardDrawerOpen: true }),
@@ -55,6 +62,13 @@ export const useUIStore = create<UIState>()(
       setSettingsModalOpen: (open) => set({ settingsModalOpen: open }),
       setBoardFilter: (filter) => set((s) => ({ boardFilter: { ...s.boardFilter, ...filter } })),
       clearBoardFilter: () => set({ boardFilter: { keyword: '' } }),
+      setBatchMode: (batchMode) => set({ batchMode, selectedCardIds: batchMode ? [] : [] }),
+      toggleCardSelection: (cardId) => set((s) => ({
+        selectedCardIds: s.selectedCardIds.includes(cardId)
+          ? s.selectedCardIds.filter((id) => id !== cardId)
+          : [...s.selectedCardIds, cardId],
+      })),
+      clearCardSelection: () => set({ selectedCardIds: [], batchMode: false }),
       setLanguage: (language) => set({ language }),
     }),
     {

@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { Spin } from 'antd';
 import { useAuthStore } from '../../stores/useAuthStore';
+import { useTeamStore } from '../../stores/useTeamStore';
 import { authApi } from '../../api/auth';
 import i18n from '../../i18n';
 
 export function AuthBootstrap({ children }: { children: React.ReactNode }) {
   const { token, setAuth, logout, authReady, setAuthReady, updateUser } = useAuthStore();
+  const { loadContext } = useTeamStore();
 
   useEffect(() => {
     let cancelled = false;
@@ -21,6 +23,7 @@ export function AuthBootstrap({ children }: { children: React.ReactNode }) {
           if (user.locale) {
             i18n.changeLanguage(user.locale);
           }
+          await loadContext().catch(() => {});
           setAuthReady(true);
         }
       } catch {
@@ -29,6 +32,7 @@ export function AuthBootstrap({ children }: { children: React.ReactNode }) {
           if (!cancelled) {
             setAuth(res.token, res.user);
             if (res.user.locale) i18n.changeLanguage(res.user.locale);
+            await loadContext().catch(() => {});
             setAuthReady(true);
           }
         } catch {
@@ -41,7 +45,7 @@ export function AuthBootstrap({ children }: { children: React.ReactNode }) {
     };
     bootstrap();
     return () => { cancelled = true; };
-  }, [token, setAuth, logout, setAuthReady, updateUser]);
+  }, [token, setAuth, logout, setAuthReady, updateUser, loadContext]);
 
   if (!authReady) {
     return (

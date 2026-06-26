@@ -1,20 +1,24 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Tag } from 'antd';
+import { Tag, Checkbox } from 'antd';
 import { CalendarOutlined, LinkOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { CardItem } from '../../types/board';
 import { CARD_TYPE_COLORS } from '../common/CardTypeTag';
 import { WorkloadBadge } from '../common/WorkloadBadge';
 import { UserAvatarGroup } from '../common/UserAvatar';
+import { useUIStore } from '../../stores/useUIStore';
 import clsx from 'clsx';
 
 interface Props {
   card: CardItem;
   onClick?: () => void;
+  onContextMenu?: (e: React.MouseEvent) => void;
 }
 
-export function BoardCard({ card, onClick }: Props) {
+export function BoardCard({ card, onClick, onContextMenu }: Props) {
+  const { batchMode, selectedCardIds, toggleCardSelection } = useUIStore();
+  const selected = selectedCardIds.includes(card.id);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `card-${card.id}`,
     data: { type: 'card', card },
@@ -32,11 +36,14 @@ export function BoardCard({ card, onClick }: Props) {
     <div
       ref={setNodeRef}
       style={style}
-      className={clsx('board-card', isDragging && 'board-card--dragging', overdue && 'board-card--overdue')}
-      {...attributes}
-      {...listeners}
-      onClick={onClick}
+      className={clsx('board-card', isDragging && 'board-card--dragging', overdue && 'board-card--overdue', selected && 'board-card--selected')}
+      {...(batchMode ? {} : { ...attributes, ...listeners })}
+      onClick={batchMode ? () => toggleCardSelection(card.id) : onClick}
+      onContextMenu={onContextMenu}
     >
+      {batchMode && (
+        <Checkbox checked={selected} style={{ marginBottom: 4 }} onChange={() => toggleCardSelection(card.id)} />
+      )}
       <div className="board-card-title">{card.title}</div>
       {card.labels && card.labels.length > 0 && (
         <div style={{ marginBottom: 4 }}>

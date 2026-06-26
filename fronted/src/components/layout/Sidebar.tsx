@@ -13,8 +13,10 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useUIStore } from '../../stores/useUIStore';
+import { useTeamStore } from '../../stores/useTeamStore';
 import { projectsApi } from '../../api/global';
 import { CreateProjectModal } from '../global/CreateProjectModal';
+import { TeamSwitcher } from '../team/TeamSwitcher';
 
 const { Sider } = Layout;
 
@@ -23,11 +25,12 @@ export function Sidebar() {
   const location = useLocation();
   const { t } = useTranslation();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
+  const { currentTeamId, currentTeam } = useTeamStore();
   const [projectModalOpen, setProjectModalOpen] = useState(false);
 
   const { data: projects = [] } = useQuery({
-    queryKey: ['projects'],
-    queryFn: projectsApi.list,
+    queryKey: ['projects', currentTeamId],
+    queryFn: () => projectsApi.list(currentTeamId),
   });
 
   const selectedKey = location.pathname.startsWith('/board')
@@ -40,7 +43,9 @@ export function Sidebar() {
           ? 'boards'
           : location.pathname.startsWith('/my/mindmaps')
             ? 'mindmaps'
-            : 'workspace';
+            : location.pathname.startsWith('/teams')
+              ? 'team-settings'
+              : 'workspace';
 
   const items = [
     { key: 'workspace', icon: <DashboardOutlined />, label: t('workspace'), onClick: () => navigate('/workspace') },
@@ -56,12 +61,14 @@ export function Sidebar() {
     {
       key: 'projects-group',
       icon: <ProjectOutlined />,
-      label: t('projects'),
-      children: projects.map((p) => ({
-        key: `project-${p.id}`,
-        label: p.name,
-        onClick: () => navigate(`/projects/${p.id}`),
-      })),
+      label: currentTeamId ? (currentTeam()?.name ?? '团队项目') : t('projects'),
+      children: projects.length
+        ? projects.map((p) => ({
+            key: `project-${p.id}`,
+            label: p.name,
+            onClick: () => navigate(`/projects/${p.id}`),
+          }))
+        : [{ key: 'no-project', label: '暂无项目', disabled: true }],
     },
     {
       key: 'help',
@@ -83,11 +90,12 @@ export function Sidebar() {
         <div style={{ padding: '16px', fontWeight: 700, fontSize: 18, color: '#1677ff', whiteSpace: 'nowrap', overflow: 'hidden' }}>
           {sidebarCollapsed ? 'S' : t('appName')}
         </div>
+        <TeamSwitcher collapsed={sidebarCollapsed} />
         <Button type="text" icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} onClick={toggleSidebar} style={{ margin: '0 8px' }} />
         <Menu mode="inline" selectedKeys={[selectedKey]} defaultOpenKeys={['my', 'projects-group']} items={items} style={{ flex: 1, border: 'none' }} />
         <div style={{ padding: 12 }}>
           <Button type="dashed" icon={<PlusOutlined />} block onClick={() => setProjectModalOpen(true)}>
-            {!sidebarCollapsed && t('newProject')}
+            {!sidebarCollapsed && (currentTeamId ? '新建团队项目' : t('newProject'))}
           </Button>
         </div>
       </Sider>

@@ -17,6 +17,22 @@ export const boardsApi = {
     apiClient.post<ApiResponse<Board['cards'][0]>>(`/boards/${boardId}/cards`, data).then((r) => r.data.data),
   batchCards: (boardId: number, data: { action: string; cardIds: number[]; columnId?: number; memberId?: number }) =>
     apiClient.post(`/boards/${boardId}/cards/batch`, data),
+  reorderColumns: (boardId: number, columnIds: number[]) =>
+    apiClient.put(`/boards/${boardId}/columns/order`, { columnIds }),
+  renameSwimlane: (swimlaneId: number, name: string) =>
+    apiClient.patch(`/swimlanes/${swimlaneId}`, { name }),
+  deleteSwimlane: (swimlaneId: number) => apiClient.delete(`/swimlanes/${swimlaneId}`),
+  reorderSwimlanes: (boardId: number, swimlaneIds: number[]) =>
+    apiClient.put(`/boards/${boardId}/swimlanes/order`, { swimlaneIds }),
+  addComment: (cardId: number, content: string) =>
+    apiClient.post(`/cards/${cardId}/comments`, { content }).then((r) => r.data.data),
+  getTrash: (boardId: number) =>
+    apiClient.get<ApiResponse<{ id: number; title: string; type: string }[]>>(`/boards/${boardId}/trash`)
+      .then((r) => r.data.data),
+  restoreTrashCard: (boardId: number, cardId: number) =>
+    apiClient.post(`/boards/${boardId}/trash/${cardId}/restore`),
+  purgeTrashCard: (boardId: number, cardId: number) =>
+    apiClient.delete(`/boards/${boardId}/trash/${cardId}`),
   addColumn: (boardId: number, name: string) =>
     apiClient.post<ApiResponse<{ id: number; name: string; sortOrder: number }>>(`/boards/${boardId}/columns`, { name }).then((r) => r.data.data),
   renameColumn: (columnId: number, name: string) =>

@@ -53,12 +53,16 @@ export function NotificationPanel({ open, onClose }: Props) {
       <List
         dataSource={data?.items ?? []}
         renderItem={(item) => (
-          <List.Item
+            <List.Item
             style={{ cursor: 'pointer', opacity: item.read ? 0.65 : 1 }}
             onClick={() => handleClick(item)}
           >
             <List.Item.Meta
-              title={<Typography.Text strong={!item.read}>{item.title}</Typography.Text>}
+              title={
+                <Typography.Text strong={!item.read}>
+                  {item.type === 'TEAM_ACTIVITY' ? '团队看板' : item.title}
+                </Typography.Text>
+              }
               description={
                 <>
                   <div>{item.content}</div>

@@ -1,8 +1,11 @@
-import { Card, List, Button, Empty } from 'antd';
+import { Card, List, Button, Empty, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import type { ActivityItem } from '../../types/board';
+import { formatActivitySentence } from '../../utils/activity';
+
+const { Text } = Typography;
 
 interface Props {
   activities: ActivityItem[];
@@ -32,16 +35,20 @@ export function ActivityFeed({ activities, hasMore, loadingMore, onLoadMore, onI
               dataSource={activities}
               split={false}
               renderItem={(a) => (
-                <List.Item style={{ cursor: a.boardId ? 'pointer' : 'default' }} onClick={() => a.boardId && handleClick(a)}>
-                  <List.Item.Meta
-                    title={<>{a.userName} {a.action}</>}
-                    description={
-                      <>
-                        {a.cardTitle && <span>{a.cardTitle} · </span>}
-                        {dayjs(a.createdAt).format('MM-DD HH:mm')}
-                      </>
-                    }
-                  />
+                <List.Item
+                  style={{ cursor: a.boardId ? 'pointer' : 'default', padding: '8px 0' }}
+                  onClick={() => a.boardId && handleClick(a)}
+                >
+                  <div>
+                    <div>
+                      <Text strong>{a.userName}</Text>
+                      {' '}
+                      <Text>{formatActivitySentence(a.action, a.cardTitle)}</Text>
+                    </div>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {dayjs(a.createdAt).format('MM-DD HH:mm')}
+                    </Text>
+                  </div>
                 </List.Item>
               )}
             />

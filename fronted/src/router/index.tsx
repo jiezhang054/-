@@ -20,6 +20,8 @@ import { ArchivedProjectsPage } from '../pages/my/ArchivedProjectsPage';
 import { ArchivedMindmapsPage } from '../pages/my/ArchivedMindmapsPage';
 import { MindMapListPage } from '../pages/mindmap/MindMapListPage';
 import { ProfilePage } from '../pages/settings/ProfilePage';
+import { TeamSettingsPage } from '../pages/team/TeamSettingsPage';
+import { BoardTrashPage } from '../pages/board/BoardTrashPage';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <GuestRoute><LoginPage /></GuestRoute> },
@@ -35,6 +37,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/workspace" replace /> },
       { path: 'workspace', element: <WorkspacePage /> },
+      { path: 'board/:boardId/trash', element: <BoardTrashPage /> },
+      { path: 'teams/:teamId/settings', element: <TeamSettingsPage /> },
       { path: 'settings/profile', element: <ProfilePage /> },
       { path: 'projects/:projectId', element: <ProjectPage /> },
       { path: 'projects/:projectId/stats', element: <ProjectStatsPage /> },

@@ -20,16 +20,23 @@ public class GlobalController {
     @Autowired private MyBoardsService myBoardsService;
 
     @GetMapping("/projects")
-    public ApiResponse<List<Map<String, Object>>> projects(Authentication auth) {
+    public ApiResponse<List<Map<String, Object>>> projects(Authentication auth,
+            @RequestParam(required = false) Long teamId,
+            @RequestParam(required = false) Boolean all) {
         Long userId = (Long) auth.getPrincipal();
-        return ApiResponse.ok(projectService.listForUser(userId));
+        if (Boolean.TRUE.equals(all)) {
+            return ApiResponse.ok(projectService.listAllForUser(userId));
+        }
+        return ApiResponse.ok(projectService.listForUser(userId, teamId));
     }
 
     @PostMapping("/projects")
-    public ApiResponse<Map<String, Object>> createProject(Authentication auth, @RequestBody Map<String, String> body) {
+    public ApiResponse<Map<String, Object>> createProject(Authentication auth, @RequestBody Map<String, Object> body) {
         Long userId = (Long) auth.getPrincipal();
+        Long teamId = body.get("teamId") != null ? Long.valueOf(body.get("teamId").toString()) : null;
         return ApiResponse.ok(projectService.create(userId,
-            body.get("name"), body.get("description"), body.getOrDefault("template", "SCRUM")));
+            (String) body.get("name"), (String) body.get("description"),
+            body.get("template") != null ? body.get("template").toString() : "SCRUM", teamId));
     }
 
     @GetMapping("/projects/archived")

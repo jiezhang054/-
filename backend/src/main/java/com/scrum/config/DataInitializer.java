@@ -18,9 +18,30 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         seedUsers();
+        if (jdbcTemplate.queryForObject("SELECT COUNT(*) FROM teams", Integer.class) == 0) {
+            seedDemoTeam();
+        }
         if (jdbcTemplate.queryForObject("SELECT COUNT(*) FROM projects", Integer.class) == 0) {
             seedDemoProject();
         }
+    }
+
+    private void seedDemoTeam() {
+        User zhong = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername, "zhong"));
+        if (zhong == null) return;
+        jdbcTemplate.update(
+            "INSERT INTO teams (id, name, description, owner_id, slug) VALUES (1, ?, ?, ?, ?)",
+            "综合课设小组", "课程演示团队空间", zhong.getId(), "scrum-team");
+        for (String[] member : new String[][]{
+            {"zhong", "ADMIN"}, {"zhang", "OWNER"}, {"yin", "MEMBER"}, {"zang", "MEMBER"}
+        }) {
+            User u = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername, member[0]));
+            if (u != null) {
+                jdbcTemplate.update("INSERT INTO team_members (team_id, user_id, role) VALUES (1, ?, ?)",
+                    u.getId(), member[1]);
+            }
+        }
+        jdbcTemplate.update("INSERT INTO user_preferences (user_id, current_team_id) VALUES (?, 1)", zhong.getId());
     }
 
     private void seedUsers() {
@@ -54,7 +75,7 @@ public class DataInitializer implements CommandLineRunner {
         if (zhong == null) return;
         Long ownerId = zhong.getId();
 
-        jdbcTemplate.update("INSERT INTO projects (id, name, description, owner_id, template) VALUES (1, ?, ?, ?, ?)",
+        jdbcTemplate.update("INSERT INTO projects (id, name, description, owner_id, team_id, template) VALUES (1, ?, ?, ?, 1, ?)",
             "电商重构项目", "敏捷重构电商平台核心模块", ownerId, "SCRUM");
 
         for (String[] member : new String[][]{{"zhang", "MEMBER"}, {"yin", "MEMBER"}, {"zhong", "OWNER"}, {"zang", "MEMBER"}}) {
@@ -64,15 +85,23 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
 
-        insertBoard(1, "产品路线图", "ROADMAP", false, null, null);
-        insertBoard(2, "里程碑 V1.0", "MILESTONE", true, null, null);
-        insertBoard(3, "Sprint 1", "SPRINT", true, "2026-06-01", "2026-06-14");
-        insertBoard(4, "Sprint 2", "SPRINT", false, "2026-06-15", "2026-06-28");
+        insertBoard(1, "产品路线图", "ROADMAP", false, null, null, null, 0);
+        insertBoard(2, "里程碑 V1.0", "MILESTONE", true, null, null, 1L, 1);
+        insertBoard(3, "Sprint 1", "SPRINT", true, "2026-06-01", "2026-06-14", 2L, 2);
+        insertBoard(4, "Sprint 2", "SPRINT", false, "2026-06-15", "2026-06-28", 2L, 7);
+        insertBoard(5, "Sprint 1 - 缺陷看板", "DEFECT", false, "2026-06-01", "2026-06-14", 3L, 3);
+        insertBoard(6, "Sprint 1 - Sprint回顾", "RETROSPECTIVE", false, "2026-06-01", "2026-06-14", 3L, 4);
+        insertBoard(7, "Sprint 2 - 缺陷看板", "DEFECT", false, "2026-06-15", "2026-06-28", 4L, 5);
+        insertBoard(8, "Sprint 2 - Sprint回顾", "RETROSPECTIVE", false, "2026-06-15", "2026-06-28", 4L, 6);
 
         insertColumns(1, new String[]{"史诗故事池", "规划中", "进行中", "已完成"});
         insertColumns(2, new String[]{"用户故事池", "用户故事-待梳理", "用户故事-梳理完成"});
         insertColumns(3, new String[]{"待办", "进行中", "测试中", "已完成"});
         insertColumns(4, new String[]{"待办", "进行中", "已完成"});
+        insertColumns(5, new String[]{"新建", "处理中", "待验证", "已关闭"});
+        insertColumns(6, new String[]{"做得好", "待改进", "行动项"});
+        insertColumns(7, new String[]{"新建", "处理中", "待验证", "已关闭"});
+        insertColumns(8, new String[]{"做得好", "待改进", "行动项"});
 
         insertSwimlane(2, 1, "用户中心模块");
         insertSwimlane(2, 2, "交易系统模块");
@@ -107,9 +136,11 @@ public class DataInitializer implements CommandLineRunner {
         jdbcTemplate.update(
             "INSERT INTO recent_visits (user_id, target_type, target_id, name) VALUES (?, 'board', 3, 'Sprint 1')", ownerId);
         jdbcTemplate.update(
-            "INSERT INTO activity_logs (user_id, action, card_id, board_id) VALUES (?, '移动了卡片', 5, 3)", ownerId);
+            "INSERT INTO activity_logs (user_id, action, card_id, board_id) VALUES (?, ?, ?, ?)",
+            ownerId, "移动了卡片「支付接口联调」到「测试中」", 5, 3);
         jdbcTemplate.update(
-            "INSERT INTO activity_logs (user_id, action, card_id, board_id) VALUES (?, '创建了卡片', 6, 3)", ownerId);
+            "INSERT INTO activity_logs (user_id, action, card_id, board_id) VALUES (?, ?, ?, ?)",
+            ownerId, "创建了卡片「修复登录超时」", 6, 3);
 
         jdbcTemplate.update(
             "INSERT INTO notifications (user_id, type, title, content, link_type, link_id, read_flag) VALUES (?, 'ASSIGN', '卡片指派', '您被指派到卡片「支付接口联调」', 'board', 3, FALSE)",
@@ -127,11 +158,11 @@ public class DataInitializer implements CommandLineRunner {
             "{\"layout\":\"mindMap\",\"root\":{\"data\":{\"text\":\"电商重构脑图\"},\"children\":[{\"data\":{\"text\":\"需求分析\"},\"children\":[]},{\"data\":{\"text\":\"技术选型\"},\"children\":[{\"data\":{\"text\":\"前端 React\"},\"children\":[]},{\"data\":{\"text\":\"后端 Spring Boot\"},\"children\":[]}]}]}}");
     }
 
-    private void insertBoard(long id, String name, String type, boolean swimlanes, String start, String end) {
+    private void insertBoard(long id, String name, String type, boolean swimlanes, String start, String end, Long parentBoardId, int sortOrder) {
         jdbcTemplate.update(
-            "INSERT INTO boards (id, name, type, project_id, swimlanes_enabled, start_date, end_date, visibility, archived) " +
-            "VALUES (?, ?, ?, 1, ?, ?, ?, 'PROJECT', FALSE)",
-            id, name, type, swimlanes, start, end);
+            "INSERT INTO boards (id, name, type, project_id, parent_board_id, swimlanes_enabled, start_date, end_date, visibility, archived, sort_order) " +
+            "VALUES (?, ?, ?, 1, ?, ?, ?, ?, 'PROJECT', FALSE, ?)",
+            id, name, type, parentBoardId, swimlanes, start, end, sortOrder);
     }
 
     private void insertColumns(long boardId, String[] names) {

@@ -65,9 +65,14 @@ export const globalApi = {
 };
 
 export const projectsApi = {
-  list: () => apiClient.get<ApiResponse<Project[]>>('/projects').then((r) => r.data.data),
+  list: (teamId?: number | null) =>
+    apiClient.get<ApiResponse<Project[]>>('/projects', {
+      params: teamId != null ? { teamId } : {},
+    }).then((r) => r.data.data),
+  listAll: () =>
+    apiClient.get<ApiResponse<Project[]>>('/projects', { params: { all: true } }).then((r) => r.data.data),
   getById: (id: number) => apiClient.get<ApiResponse<Project>>(`/projects/${id}`).then((r) => r.data.data),
-  create: (data: { name: string; description?: string; template?: string }) =>
+  create: (data: { name: string; description?: string; template?: string; teamId?: number | null }) =>
     apiClient.post<ApiResponse<Project>>('/projects', data).then((r) => r.data.data),
   update: (id: number, data: { name?: string; description?: string }) =>
     apiClient.patch<ApiResponse<Project>>(`/projects/${id}`, data).then((r) => r.data.data),

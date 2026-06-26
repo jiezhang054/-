@@ -17,7 +17,7 @@ export function CreateMindmapModal({ open, onClose, onCreated }: Props) {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: projectsApi.list,
+    queryFn: () => projectsApi.listAll(),
     enabled: open,
   });
 

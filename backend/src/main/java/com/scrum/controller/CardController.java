@@ -28,6 +28,7 @@ public class CardController {
         Card card = cardMapper.selectById(id);
         if (card == null) throw new IllegalArgumentException("卡片不存在");
         boardDetailService.ensureAccess(card.getBoardId(), userId);
+        boardDetailService.ensureWrite(card.getBoardId(), userId);
         return ApiResponse.ok(boardService.updateCard(id, body));
     }
 
@@ -47,6 +48,12 @@ public class CardController {
         Long targetBoardId = Long.valueOf(body.get("targetBoardId").toString());
         boardDetailService.ensureAccess(targetBoardId, userId);
         return ApiResponse.ok(scrumChainService.createReference(id, targetBoardId));
+    }
+
+    @PostMapping("/{id}/comments")
+    public ApiResponse<BoardDetailDTO.CommentDTO> addComment(@PathVariable Long id,
+            @RequestBody Map<String, String> body, Authentication auth) {
+        return ApiResponse.ok(boardDetailService.addComment(id, (Long) auth.getPrincipal(), body.get("content")));
     }
 
     @PostMapping("/{id}/split")

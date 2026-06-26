@@ -18,9 +18,13 @@ public class ScrumChainService {
     @Autowired private SwimlaneMapper swimlaneMapper;
     @Autowired private CardMapper cardMapper;
     @Autowired private BoardService boardService;
+    @Autowired private BoardChainService boardChainService;
+    @Autowired private PermissionService permissionService;
 
     @Transactional
-    public BoardDetailDTO createMilestoneBoard(Long roadmapBoardId, Map<String, Object> request) {
+    public BoardDetailDTO createMilestoneBoard(Long roadmapBoardId, Long userId, Map<String, Object> request) {
+        permissionService.ensureBoardWrite(roadmapBoardId, userId);
+        boardChainService.ensureCanCreateMilestone(roadmapBoardId);
         Board roadmap = boardMapper.selectById(roadmapBoardId);
         if (roadmap == null) throw new RuntimeException("路线图不存在");
 
@@ -64,11 +68,13 @@ public class ScrumChainService {
                 cardMapper.insert(ref);
             }
         }
-        return boardService.getBoardDetail(milestone.getId(), null);
+        return boardService.getBoardDetail(milestone.getId(), userId);
     }
 
     @Transactional
-    public BoardDetailDTO createSprintBoard(Long milestoneBoardId, Map<String, Object> request) {
+    public BoardDetailDTO createSprintBoard(Long milestoneBoardId, Long userId, Map<String, Object> request) {
+        permissionService.ensureBoardWrite(milestoneBoardId, userId);
+        boardChainService.ensureCanCreateSprint(milestoneBoardId);
         Board milestone = boardMapper.selectById(milestoneBoardId);
         if (milestone == null) throw new RuntimeException("里程碑看板不存在");
 
@@ -130,7 +136,8 @@ public class ScrumChainService {
                     cardMapper.insert(taskCard);
                 }
             }
-            last = boardService.getBoardDetail(sprint.getId(), null);
+            boardChainService.createDefectAndRetroBoards(sprint);
+            last = boardService.getBoardDetail(sprint.getId(), userId);
         }
         return last;
     }

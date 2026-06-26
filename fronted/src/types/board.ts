@@ -1,4 +1,4 @@
-export type BoardType = 'NORMAL' | 'ROADMAP' | 'MILESTONE' | 'SPRINT' | 'DEFECT';
+export type BoardType = 'NORMAL' | 'ROADMAP' | 'MILESTONE' | 'SPRINT' | 'DEFECT' | 'RETROSPECTIVE';
 export type CardType = 'EPIC' | 'USER_STORY' | 'TASK' | 'BUG' | 'OTHER';
 export type ProjectRole = 'OWNER' | 'MEMBER' | 'READONLY';
 export type BoardRole = 'ADMIN' | 'MEMBER' | 'READONLY';
@@ -81,6 +81,17 @@ export interface Board {
   swimlanes: Swimlane[];
   cards: CardItem[];
   starred?: boolean;
+  permissions?: { canRead: boolean; canWrite: boolean; role?: string; projectRole?: string; chainLocked?: boolean; chainMessage?: string };
+  completed?: boolean;
+  chainLocked?: boolean;
+  chainMessage?: string;
+  parentBoardName?: string;
+  canPlanMilestone?: boolean;
+  canPlanSprint?: boolean;
+  linkedDefectBoardId?: number;
+  linkedRetroBoardId?: number;
+  linkedSprintId?: number;
+  linkedSprintName?: string;
 }
 
 export interface BoardMember {
@@ -102,6 +113,12 @@ export interface BoardSummary {
   endDate?: string;
   completed?: boolean;
   sortOrder?: number;
+  chainLocked?: boolean;
+  chainMessage?: string;
+  parentBoardId?: number;
+  linkedDefectBoardId?: number;
+  linkedRetroBoardId?: number;
+  linkedSprintId?: number;
 }
 
 export interface ProjectTab {
@@ -126,6 +143,7 @@ export interface Project {
   description?: string;
   template?: string;
   archived?: boolean;
+  teamId?: number;
   role?: ProjectRole;
   boards: BoardSummary[];
   tabs?: ProjectTab[];

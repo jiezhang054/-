@@ -18,7 +18,7 @@ export function CreateBoardModal({ open, onClose, onCreated, defaultProjectId, a
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: projectsApi.list,
+    queryFn: () => projectsApi.listAll(),
     enabled: open,
   });
 

@@ -69,7 +69,7 @@ export function MyBoardsPage() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: projectsApi.list,
+    queryFn: () => projectsApi.listAll(),
   });
 
   useEffect(() => {

@@ -22,23 +22,32 @@ public class BoardDetailService {
     @Autowired private UserMapper userMapper;
     @Autowired private BoardService boardService;
     @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired private PermissionService permissionService;
+    @Autowired private ActivityLogService activityLogService;
 
     public void ensureAccess(Long boardId, Long userId) {
-        Integer count = jdbcTemplate.queryForObject(
-            "SELECT COUNT(*) FROM boards b JOIN project_members pm ON b.project_id = pm.project_id " +
-            "WHERE b.id = ? AND pm.user_id = ?", Integer.class, boardId, userId);
-        if (count == null || count == 0) throw new IllegalArgumentException("无权访问该看板");
+        permissionService.ensureBoardRead(boardId, userId);
+    }
+
+    public void ensureWrite(Long boardId, Long userId) {
+        permissionService.ensureBoardWrite(boardId, userId);
     }
 
     private void logActivity(Long userId, Long boardId, Long cardId, String action) {
-        jdbcTemplate.update(
-            "INSERT INTO activity_logs (user_id, action, card_id, board_id) VALUES (?, ?, ?, ?)",
-            userId, action, cardId, boardId);
+        if (cardId != null) {
+            activityLogService.record(userId, boardId, cardId, action);
+        } else {
+            activityLogService.recordBoardEvent(userId, boardId, action);
+        }
+    }
+
+    private void logTeamCardBatch(Long userId, Long boardId, String action) {
+        activityLogService.recordTeamCardBatch(userId, boardId, action);
     }
 
     @Transactional
     public BoardDetailDTO updateSettings(Long boardId, Long userId, Map<String, Object> body) {
-        ensureAccess(boardId, userId);
+        ensureWrite(boardId, userId);
         Board board = boardMapper.selectById(boardId);
         if (board == null) throw new IllegalArgumentException("看板不存在");
         if (body.containsKey("name") && StringUtils.hasText((String) body.get("name"))) {
@@ -121,7 +130,7 @@ public class BoardDetailService {
 
     @Transactional
     public Map<String, Object> inviteMember(Long boardId, Long userId, String identifier, String role) {
-        ensureAccess(boardId, userId);
+        ensureWrite(boardId, userId);
         if (!StringUtils.hasText(identifier)) throw new IllegalArgumentException("请输入用户名或邮箱");
         String r = StringUtils.hasText(role) ? role.toUpperCase() : "MEMBER";
         List<User> users = userMapper.selectList(new LambdaQueryWrapper<User>()
@@ -144,7 +153,7 @@ public class BoardDetailService {
 
     @Transactional
     public BoardDetailDTO.ColumnDTO addColumn(Long boardId, Long userId, String name) {
-        ensureAccess(boardId, userId);
+        ensureWrite(boardId, userId);
         if (!StringUtils.hasText(name)) throw new IllegalArgumentException("列名称不能为空");
         List<BoardColumn> cols = columnMapper.selectList(
             new LambdaQueryWrapper<BoardColumn>().eq(BoardColumn::getBoardId, boardId)
@@ -165,7 +174,7 @@ public class BoardDetailService {
     public void renameColumn(Long columnId, Long userId, String name) {
         BoardColumn col = columnMapper.selectById(columnId);
         if (col == null) throw new IllegalArgumentException("列不存在");
-        ensureAccess(col.getBoardId(), userId);
+        ensureWrite(col.getBoardId(), userId);
         col.setName(name);
         columnMapper.updateById(col);
         logActivity(userId, col.getBoardId(), null, "重命名列为「" + name + "」");
@@ -175,7 +184,7 @@ public class BoardDetailService {
     public void deleteColumn(Long columnId, Long userId, Long moveToColumnId) {
         BoardColumn col = columnMapper.selectById(columnId);
         if (col == null) throw new IllegalArgumentException("列不存在");
-        ensureAccess(col.getBoardId(), userId);
+        ensureWrite(col.getBoardId(), userId);
         Long target = moveToColumnId;
         if (target == null) {
             List<BoardColumn> others = columnMapper.selectList(
@@ -196,7 +205,7 @@ public class BoardDetailService {
 
     @Transactional
     public void reorderColumns(Long boardId, Long userId, List<Long> columnIds) {
-        ensureAccess(boardId, userId);
+        ensureWrite(boardId, userId);
         for (int i = 0; i < columnIds.size(); i++) {
             BoardColumn col = columnMapper.selectById(columnIds.get(i));
             if (col != null && boardId.equals(col.getBoardId())) {
@@ -208,7 +217,7 @@ public class BoardDetailService {
 
     @Transactional
     public BoardDetailDTO.SwimlaneDTO addSwimlane(Long boardId, Long userId, String name) {
-        ensureAccess(boardId, userId);
+        ensureWrite(boardId, userId);
         Board board = boardMapper.selectById(boardId);
         if (board != null) {
             board.setSwimlanesEnabled(true);
@@ -233,7 +242,7 @@ public class BoardDetailService {
     public void renameSwimlane(Long swimlaneId, Long userId, String name) {
         Swimlane sl = swimlaneMapper.selectById(swimlaneId);
         if (sl == null) throw new IllegalArgumentException("泳道不存在");
-        ensureAccess(sl.getBoardId(), userId);
+        ensureWrite(sl.getBoardId(), userId);
         sl.setName(name);
         swimlaneMapper.updateById(sl);
     }
@@ -242,7 +251,7 @@ public class BoardDetailService {
     public void deleteSwimlane(Long swimlaneId, Long userId) {
         Swimlane sl = swimlaneMapper.selectById(swimlaneId);
         if (sl == null) throw new IllegalArgumentException("泳道不存在");
-        ensureAccess(sl.getBoardId(), userId);
+        ensureWrite(sl.getBoardId(), userId);
         List<Card> cards = cardMapper.selectList(
             new LambdaQueryWrapper<Card>().eq(Card::getSwimlaneId, swimlaneId).eq(Card::getDeleted, false));
         for (Card c : cards) {
@@ -255,7 +264,7 @@ public class BoardDetailService {
 
     @Transactional
     public BoardDetailDTO.CardDTO createCard(Long boardId, Long userId, Map<String, Object> body) {
-        ensureAccess(boardId, userId);
+        ensureWrite(boardId, userId);
         Long columnId = Long.valueOf(body.get("columnId").toString());
         Card card = new Card();
         card.setBoardId(boardId);
@@ -284,15 +293,19 @@ public class BoardDetailService {
     public void deleteCard(Long cardId, Long userId) {
         Card card = cardMapper.selectById(cardId);
         if (card == null) throw new IllegalArgumentException("卡片不存在");
-        ensureAccess(card.getBoardId(), userId);
+        ensureWrite(card.getBoardId(), userId);
+        markCardDeleted(card);
+        logActivity(userId, card.getBoardId(), cardId, "删除了卡片「" + card.getTitle() + "」");
+    }
+
+    private void markCardDeleted(Card card) {
         card.setDeleted(true);
         cardMapper.updateById(card);
-        logActivity(userId, card.getBoardId(), cardId, "删除了卡片「" + card.getTitle() + "」");
     }
 
     @Transactional
     public void batchUpdateCards(Long boardId, Long userId, Map<String, Object> body) {
-        ensureAccess(boardId, userId);
+        ensureWrite(boardId, userId);
         String action = body.get("action").toString();
         @SuppressWarnings("unchecked")
         List<Number> cardIds = (List<Number>) body.get("cardIds");
@@ -307,9 +320,15 @@ public class BoardDetailService {
                     cardMapper.updateById(card);
                 }
             }
-            logActivity(userId, boardId, null, "批量移动了 " + ids.size() + " 张卡片");
+            logTeamCardBatch(userId, boardId, "批量移动了 " + ids.size() + " 张卡片");
         } else if ("delete".equals(action)) {
-            for (Long cid : ids) deleteCard(cid, userId);
+            for (Long cid : ids) {
+                Card card = cardMapper.selectById(cid);
+                if (card != null && boardId.equals(card.getBoardId())) {
+                    markCardDeleted(card);
+                }
+            }
+            logTeamCardBatch(userId, boardId, "批量删除了 " + ids.size() + " 张卡片");
         } else if ("assign".equals(action) && body.get("memberId") != null) {
             Long memberId = Long.valueOf(body.get("memberId").toString());
             for (Long cid : ids) {
@@ -318,7 +337,7 @@ public class BoardDetailService {
                     "(SELECT 1 FROM card_members WHERE card_id = ? AND user_id = ?)",
                     cid, memberId, cid, memberId);
             }
-            logActivity(userId, boardId, null, "批量指派了 " + ids.size() + " 张卡片");
+            logTeamCardBatch(userId, boardId, "批量指派了 " + ids.size() + " 张卡片");
         }
     }
 
@@ -333,7 +352,7 @@ public class BoardDetailService {
     public List<BoardDetailDTO.CardDTO> splitCard(Long cardId, Long userId, List<Map<String, Object>> tasks) {
         Card parent = cardMapper.selectById(cardId);
         if (parent == null) throw new IllegalArgumentException("卡片不存在");
-        ensureAccess(parent.getBoardId(), userId);
+        ensureWrite(parent.getBoardId(), userId);
         if (!"USER_STORY".equals(parent.getType()) && !"EPIC".equals(parent.getType())) {
             throw new IllegalArgumentException("仅用户故事或史诗可拆分");
         }
@@ -361,7 +380,7 @@ public class BoardDetailService {
 
     @Transactional
     public void importBoardJson(Long boardId, Long userId, String json) throws Exception {
-        ensureAccess(boardId, userId);
+        ensureWrite(boardId, userId);
         com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
         com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(json);
         com.fasterxml.jackson.databind.JsonNode cards = root.get("cards");
@@ -384,5 +403,76 @@ public class BoardDetailService {
             cardMapper.insert(card);
         }
         logActivity(userId, boardId, null, "导入了看板数据");
+    }
+
+    @Transactional
+    public void reorderSwimlanes(Long boardId, Long userId, List<Long> swimlaneIds) {
+        ensureWrite(boardId, userId);
+        for (int i = 0; i < swimlaneIds.size(); i++) {
+            Swimlane sl = swimlaneMapper.selectById(swimlaneIds.get(i));
+            if (sl != null && boardId.equals(sl.getBoardId())) {
+                sl.setSortOrder(i);
+                swimlaneMapper.updateById(sl);
+            }
+        }
+    }
+
+    public List<Map<String, Object>> listTrash(Long boardId, Long userId) {
+        ensureAccess(boardId, userId);
+        return jdbcTemplate.query(
+            "SELECT id, title, type, column_id as columnId, deleted, board_id as boardId FROM cards " +
+            "WHERE board_id = ? AND deleted = TRUE ORDER BY id DESC",
+            (rs, i) -> {
+                Map<String, Object> m = new HashMap<>();
+                m.put("id", rs.getLong("id"));
+                m.put("title", rs.getString("title"));
+                m.put("type", rs.getString("type"));
+                m.put("columnId", rs.getLong("columnId"));
+                m.put("kind", "card");
+                return m;
+            }, boardId);
+    }
+
+    @Transactional
+    public void restoreCard(Long cardId, Long userId) {
+        Card card = cardMapper.selectById(cardId);
+        if (card == null) throw new IllegalArgumentException("卡片不存在");
+        ensureWrite(card.getBoardId(), userId);
+        card.setDeleted(false);
+        cardMapper.updateById(card);
+        logActivity(userId, card.getBoardId(), cardId, "恢复了卡片「" + card.getTitle() + "」");
+    }
+
+    @Transactional
+    public void purgeCard(Long cardId, Long userId) {
+        Card card = cardMapper.selectById(cardId);
+        if (card == null) throw new IllegalArgumentException("卡片不存在");
+        ensureWrite(card.getBoardId(), userId);
+        jdbcTemplate.update("DELETE FROM card_members WHERE card_id = ?", cardId);
+        jdbcTemplate.update("DELETE FROM card_labels WHERE card_id = ?", cardId);
+        jdbcTemplate.update("DELETE FROM card_checklist WHERE card_id = ?", cardId);
+        jdbcTemplate.update("DELETE FROM card_comments WHERE card_id = ?", cardId);
+        cardMapper.deleteById(cardId);
+    }
+
+    @Transactional
+    public BoardDetailDTO.CommentDTO addComment(Long cardId, Long userId, String content) {
+        Card card = cardMapper.selectById(cardId);
+        if (card == null) throw new IllegalArgumentException("卡片不存在");
+        ensureWrite(card.getBoardId(), userId);
+        if (!StringUtils.hasText(content)) throw new IllegalArgumentException("评论内容不能为空");
+        jdbcTemplate.update("INSERT INTO card_comments (card_id, user_id, content) VALUES (?, ?, ?)",
+            cardId, userId, content.trim());
+        Long commentId = jdbcTemplate.queryForObject("SELECT MAX(id) FROM card_comments WHERE card_id = ?",
+            Long.class, cardId);
+        User user = userMapper.selectById(userId);
+        logActivity(userId, card.getBoardId(), cardId, "评论了卡片「" + card.getTitle() + "」");
+        BoardDetailDTO.CommentDTO dto = new BoardDetailDTO.CommentDTO();
+        dto.setId(commentId);
+        dto.setUserId(userId);
+        dto.setUserName(user != null ? user.getDisplayName() : "");
+        dto.setContent(content.trim());
+        dto.setCreatedAt(java.time.LocalDateTime.now().toString());
+        return dto;
     }
 }

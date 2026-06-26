@@ -31,7 +31,7 @@ export function MindMapListPage() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: projectsApi.list,
+    queryFn: () => projectsApi.listAll(),
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['mindmaps'] });

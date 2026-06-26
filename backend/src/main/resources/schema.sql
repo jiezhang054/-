@@ -9,11 +9,37 @@ CREATE TABLE IF NOT EXISTS users (
     locale VARCHAR(16) DEFAULT 'zh-CN'
 );
 
+CREATE TABLE IF NOT EXISTS teams (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(128) NOT NULL,
+    slug VARCHAR(64),
+    description VARCHAR(512),
+    avatar VARCHAR(512),
+    owner_id BIGINT NOT NULL,
+    archived BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS team_members (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    team_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    role VARCHAR(16) NOT NULL DEFAULT 'MEMBER',
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(team_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS user_preferences (
+    user_id BIGINT PRIMARY KEY,
+    current_team_id BIGINT
+);
+
 CREATE TABLE IF NOT EXISTS projects (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(128) NOT NULL,
     description VARCHAR(512),
     owner_id BIGINT NOT NULL,
+    team_id BIGINT,
     template VARCHAR(32) DEFAULT 'SCRUM',
     archived BOOLEAN DEFAULT FALSE
 );
@@ -172,5 +198,24 @@ CREATE TABLE IF NOT EXISTS card_comments (
     card_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     content VARCHAR(1024) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS card_attachments (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    card_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    file_name VARCHAR(256) NOT NULL,
+    file_path VARCHAR(512) NOT NULL,
+    file_size BIGINT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS board_snapshots (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    board_id BIGINT NOT NULL,
+    token VARCHAR(64) NOT NULL UNIQUE,
+    snapshot_json TEXT NOT NULL,
+    created_by BIGINT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

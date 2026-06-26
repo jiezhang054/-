@@ -20,29 +20,54 @@ public class ProjectService {
     @Autowired private UserMapper userMapper;
     @Autowired private BoardService boardService;
     @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired private PermissionService permissionService;
+    @Autowired private BoardChainService boardChainService;
+    @Autowired private ScrumTemplateService scrumTemplateService;
 
-    public List<Map<String, Object>> listForUser(Long userId) {
-        return jdbcTemplate.query(
-            "SELECT p.id, p.name, p.description, p.template, rv.visited_at as lastVisitedAt " +
+    public List<Map<String, Object>> listForUser(Long userId, Long teamId) {
+        String teamFilter = teamId == null ? "p.team_id IS NULL" : "p.team_id = ?";
+        Object[] args = teamId == null
+            ? new Object[]{userId, userId}
+            : new Object[]{userId, userId, teamId};
+        return queryProjectList(
+            "SELECT p.id, p.name, p.description, p.template, p.team_id as teamId, rv.visited_at as lastVisitedAt " +
+            "FROM projects p JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = ? " +
+            "LEFT JOIN (SELECT target_id, MAX(visited_at) as visited_at FROM recent_visits " +
+            "WHERE user_id = ? AND target_type = 'project' GROUP BY target_id) rv ON rv.target_id = p.id " +
+            "WHERE (p.archived IS NULL OR p.archived = FALSE) AND " + teamFilter + " " +
+            "ORDER BY CASE WHEN rv.visited_at IS NULL THEN 1 ELSE 0 END, rv.visited_at DESC, p.name ASC",
+            userId, args);
+    }
+
+    public List<Map<String, Object>> listAllForUser(Long userId) {
+        return queryProjectList(
+            "SELECT p.id, p.name, p.description, p.template, p.team_id as teamId, rv.visited_at as lastVisitedAt " +
             "FROM projects p JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = ? " +
             "LEFT JOIN (SELECT target_id, MAX(visited_at) as visited_at FROM recent_visits " +
             "WHERE user_id = ? AND target_type = 'project' GROUP BY target_id) rv ON rv.target_id = p.id " +
             "WHERE (p.archived IS NULL OR p.archived = FALSE) " +
             "ORDER BY CASE WHEN rv.visited_at IS NULL THEN 1 ELSE 0 END, rv.visited_at DESC, p.name ASC",
-            (rs, i) -> {
-                Map<String, Object> m = new HashMap<>();
-                m.put("id", rs.getLong("id"));
-                m.put("name", rs.getString("name"));
-                m.put("description", rs.getString("description"));
-                m.put("template", rs.getString("template"));
-                java.sql.Timestamp ts = rs.getTimestamp("lastVisitedAt");
-                if (ts != null) m.put("lastVisitedAt", ts.toString());
-                Project p = projectMapper.selectById(rs.getLong("id"));
-                if (p != null) {
-                    m.put("boards", toProjectMap(p, userId).get("boards"));
-                }
-                return m;
-            }, userId, userId);
+            userId, userId);
+    }
+
+    private List<Map<String, Object>> queryProjectList(String sql, Long userId, Object... args) {
+        return jdbcTemplate.query(sql, (rs, i) -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("id", rs.getLong("id"));
+            m.put("name", rs.getString("name"));
+            m.put("description", rs.getString("description"));
+            m.put("template", rs.getString("template"));
+            long tid = rs.getLong("teamId");
+            if (!rs.wasNull()) m.put("teamId", tid);
+            java.sql.Timestamp ts = rs.getTimestamp("lastVisitedAt");
+            if (ts != null) m.put("lastVisitedAt", ts.toString());
+            Project p = projectMapper.selectById(rs.getLong("id"));
+            if (p != null) {
+                ensureScrumBoards(p);
+                m.put("boards", toProjectMap(p, userId).get("boards"));
+            }
+            return m;
+        }, args);
     }
 
     public List<Map<String, Object>> listArchived(Long userId) {
@@ -62,19 +87,24 @@ public class ProjectService {
     }
 
     public Map<String, Object> getById(Long id, Long userId) {
-        ensureMember(id, userId);
+        permissionService.ensureProjectRead(id, userId);
         Project p = projectMapper.selectById(id);
         if (p == null) throw new IllegalArgumentException("项目不存在");
+        ensureScrumBoards(p);
         return toProjectMap(p, userId);
     }
 
     @Transactional
-    public Map<String, Object> create(Long userId, String name, String description, String template) {
+    public Map<String, Object> create(Long userId, String name, String description, String template, Long teamId) {
         if (!StringUtils.hasText(name)) throw new IllegalArgumentException("项目名称不能为空");
+        if (teamId != null) {
+            permissionService.ensureTeamManager(teamId, userId);
+        }
         Project p = new Project();
         p.setName(name);
         p.setDescription(description);
         p.setOwnerId(userId);
+        p.setTeamId(teamId);
         p.setTemplate(StringUtils.hasText(template) ? template : "SCRUM");
         p.setArchived(false);
         projectMapper.insert(p);
@@ -83,10 +113,16 @@ public class ProjectService {
             p.getId(), userId);
 
         if ("SCRUM".equalsIgnoreCase(p.getTemplate())) {
-            boardService.createBoard(p.getId(), "产品路线图", "ROADMAP", "ROADMAP");
+            scrumTemplateService.initializeProject(p.getId());
         }
 
         return toProjectMap(p, userId);
+    }
+
+    private void ensureScrumBoards(Project p) {
+        if ("SCRUM".equalsIgnoreCase(p.getTemplate())) {
+            scrumTemplateService.ensureComplete(p.getId());
+        }
     }
 
     @Transactional
@@ -309,6 +345,7 @@ public class ProjectService {
         pm.put("description", p.getDescription());
         pm.put("template", p.getTemplate());
         pm.put("archived", Boolean.TRUE.equals(p.getArchived()));
+        pm.put("teamId", p.getTeamId());
         pm.put("role", getUserRole(p.getId(), userId));
 
         List<Board> boards = boardMapper.selectList(
@@ -323,7 +360,7 @@ public class ProjectService {
 
         List<Map<String, Object>> tabs = new ArrayList<>();
         for (Board b : boards) {
-            if (Set.of("ROADMAP", "MILESTONE", "SPRINT").contains(b.getType())) {
+            if (Set.of("ROADMAP", "MILESTONE", "SPRINT", "DEFECT", "RETROSPECTIVE").contains(b.getType())) {
                 Map<String, Object> tab = new HashMap<>();
                 tab.put("key", b.getType().toLowerCase() + "-" + b.getId());
                 tab.put("boardId", b.getId());
@@ -357,25 +394,22 @@ public class ProjectService {
         long cardCount = cardMapper.selectCount(
             new LambdaQueryWrapper<Card>().eq(Card::getBoardId, b.getId()).eq(Card::getDeleted, false));
         bs.put("cardCount", cardCount);
-        bs.put("completed", isBoardCompleted(b.getId()));
+        bs.put("completed", boardChainService.isBoardCompleted(b.getId()));
+        bs.put("chainLocked", boardChainService.isChainLocked(b.getId()));
+        bs.put("chainMessage", boardChainService.getChainLockMessage(b.getId()));
+        bs.put("parentBoardId", b.getParentBoardId());
+        if ("SPRINT".equals(b.getType())) {
+            bs.put("linkedDefectBoardId", boardChainService.findLinkedBoardId(b.getId(), "DEFECT"));
+            bs.put("linkedRetroBoardId", boardChainService.findLinkedBoardId(b.getId(), "RETROSPECTIVE"));
+        }
+        if ("DEFECT".equals(b.getType()) || "RETROSPECTIVE".equals(b.getType())) {
+            bs.put("linkedSprintId", b.getParentBoardId());
+        }
         return bs;
     }
 
     private boolean isBoardCompleted(Long boardId) {
-        List<BoardColumn> cols = columnMapper.selectList(
-            new LambdaQueryWrapper<BoardColumn>().eq(BoardColumn::getBoardId, boardId)
-                .orderByDesc(BoardColumn::getSortOrder).last("LIMIT 1"));
-        if (cols.isEmpty()) return true;
-        Long doneColId = cols.get(0).getId();
-
-        long total = cardMapper.selectCount(
-            new LambdaQueryWrapper<Card>().eq(Card::getBoardId, boardId).eq(Card::getDeleted, false));
-        if (total == 0) return true;
-
-        long inDone = cardMapper.selectCount(
-            new LambdaQueryWrapper<Card>().eq(Card::getBoardId, boardId).eq(Card::getDeleted, false)
-                .eq(Card::getColumnId, doneColId));
-        return total == inDone;
+        return boardChainService.isBoardCompleted(boardId);
     }
 
     private String getUserRole(Long projectId, Long userId) {
@@ -393,10 +427,7 @@ public class ProjectService {
     }
 
     private void ensureMember(Long projectId, Long userId) {
-        Integer count = jdbcTemplate.queryForObject(
-            "SELECT COUNT(*) FROM project_members WHERE project_id = ? AND user_id = ?",
-            Integer.class, projectId, userId);
-        if (count == null || count == 0) throw new IllegalArgumentException("无权访问该项目");
+        permissionService.ensureProjectRead(projectId, userId);
     }
 
     private void ensureOwner(Long projectId, Long userId) {

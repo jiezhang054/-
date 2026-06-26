@@ -17,6 +17,40 @@ public class BoardDetailDTO {
     private List<ColumnDTO> columns;
     private List<SwimlaneDTO> swimlanes;
     private List<CardDTO> cards;
+    private java.util.Map<String, Object> permissions;
+    private Boolean completed;
+    private Boolean chainLocked;
+    private String chainMessage;
+    private String parentBoardName;
+    private Boolean canPlanMilestone;
+    private Boolean canPlanSprint;
+    private Long linkedDefectBoardId;
+    private Long linkedRetroBoardId;
+    private Long linkedSprintId;
+    private String linkedSprintName;
+
+    public Boolean getCompleted() { return completed; }
+    public void setCompleted(Boolean completed) { this.completed = completed; }
+    public Boolean getChainLocked() { return chainLocked; }
+    public void setChainLocked(Boolean chainLocked) { this.chainLocked = chainLocked; }
+    public String getChainMessage() { return chainMessage; }
+    public void setChainMessage(String chainMessage) { this.chainMessage = chainMessage; }
+    public String getParentBoardName() { return parentBoardName; }
+    public void setParentBoardName(String parentBoardName) { this.parentBoardName = parentBoardName; }
+    public Boolean getCanPlanMilestone() { return canPlanMilestone; }
+    public void setCanPlanMilestone(Boolean canPlanMilestone) { this.canPlanMilestone = canPlanMilestone; }
+    public Boolean getCanPlanSprint() { return canPlanSprint; }
+    public void setCanPlanSprint(Boolean canPlanSprint) { this.canPlanSprint = canPlanSprint; }
+    public Long getLinkedDefectBoardId() { return linkedDefectBoardId; }
+    public void setLinkedDefectBoardId(Long linkedDefectBoardId) { this.linkedDefectBoardId = linkedDefectBoardId; }
+    public Long getLinkedRetroBoardId() { return linkedRetroBoardId; }
+    public void setLinkedRetroBoardId(Long linkedRetroBoardId) { this.linkedRetroBoardId = linkedRetroBoardId; }
+    public Long getLinkedSprintId() { return linkedSprintId; }
+    public void setLinkedSprintId(Long linkedSprintId) { this.linkedSprintId = linkedSprintId; }
+    public String getLinkedSprintName() { return linkedSprintName; }
+    public void setLinkedSprintName(String linkedSprintName) { this.linkedSprintName = linkedSprintName; }
+    public java.util.Map<String, Object> getPermissions() { return permissions; }
+    public void setPermissions(java.util.Map<String, Object> permissions) { this.permissions = permissions; }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

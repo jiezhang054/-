@@ -14,11 +14,18 @@ interface Props {
   cards: CardItem[];
   boardId: number;
   swimlaneId?: number;
+  columnIndex?: number;
+  columnIds?: number[];
+  canWrite?: boolean;
   onCardClick: (cardId: number) => void;
   onRefresh?: () => void;
+  onCardContextMenu?: (card: CardItem, e: React.MouseEvent) => void;
 }
 
-export function BoardColumnView({ column, cards, boardId, swimlaneId, onCardClick, onRefresh }: Props) {
+export function BoardColumnView({
+  column, cards, boardId, swimlaneId, columnIndex = 0, columnIds = [],
+  canWrite = true, onCardClick, onRefresh, onCardContextMenu,
+}: Props) {
   const { setNodeRef, isOver } = useDroppable({
     id: `column-${column.id}`,
     data: { type: 'column', columnId: column.id },
@@ -62,6 +69,7 @@ export function BoardColumnView({ column, cards, boardId, swimlaneId, onCardClic
   };
 
   const handleDelete = () => {
+    if (!canWrite) return;
     Modal.confirm({
       title: `删除列「${column.name}」？`,
       content: '列内卡片将移动到相邻列',
@@ -77,9 +85,28 @@ export function BoardColumnView({ column, cards, boardId, swimlaneId, onCardClic
     });
   };
 
+  const moveColumn = async (direction: 'left' | 'right') => {
+    if (!columnIds.length) return;
+    const idx = columnIds.indexOf(column.id);
+    const swapIdx = direction === 'left' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= columnIds.length) return;
+    const next = [...columnIds];
+    [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
+    try {
+      await boardsApi.reorderColumns(boardId, next);
+      onRefresh?.();
+    } catch {
+      message.error('列排序失败');
+    }
+  };
+
   const menuItems: MenuProps['items'] = [
-    { key: 'rename', label: '重命名', onClick: () => { setRenameValue(column.name); setRenaming(true); } },
-    { key: 'delete', label: '删除列', danger: true, onClick: handleDelete },
+    ...(canWrite ? [
+      { key: 'rename', label: '重命名', onClick: () => { setRenameValue(column.name); setRenaming(true); } },
+      ...(columnIndex > 0 ? [{ key: 'left', label: '左移', onClick: () => moveColumn('left') }] : []),
+      ...(columnIndex < columnIds.length - 1 ? [{ key: 'right', label: '右移', onClick: () => moveColumn('right') }] : []),
+      { key: 'delete', label: '删除列', danger: true, onClick: handleDelete },
+    ] : []),
   ];
 
   return (
@@ -88,7 +115,7 @@ export function BoardColumnView({ column, cards, boardId, swimlaneId, onCardClic
         <span>{column.name}</span>
         <span style={{ color: '#8f959e', fontWeight: 400 }}>({cards.length})</span>
         <Dropdown menu={{ items: menuItems }} trigger={['click']}>
-          <Button type="text" size="small" icon={<MoreOutlined />} style={{ marginLeft: 'auto' }} />
+          <Button type="text" size="small" icon={<MoreOutlined />} style={{ marginLeft: 'auto' }} disabled={!menuItems?.length} />
         </Dropdown>
       </div>
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
@@ -97,7 +124,12 @@ export function BoardColumnView({ column, cards, boardId, swimlaneId, onCardClic
             <div className="board-empty-drop">拖拽卡片到此处</div>
           ) : (
             sorted.map((card) => (
-              <BoardCard key={card.id} card={card} onClick={() => onCardClick(card.id)} />
+              <BoardCard
+                key={card.id}
+                card={card}
+                onClick={() => onCardClick(card.id)}
+                onContextMenu={(e) => onCardContextMenu?.(card, e)}
+              />
             ))
           )}
         </div>
@@ -118,9 +150,11 @@ export function BoardColumnView({ column, cards, boardId, swimlaneId, onCardClic
           </div>
         </div>
       ) : (
-        <Button type="text" size="small" icon={<PlusOutlined />} block onClick={() => setAdding(true)}>
-          添加卡片
-        </Button>
+        canWrite && (
+          <Button type="text" size="small" icon={<PlusOutlined />} block onClick={() => setAdding(true)}>
+            添加卡片
+          </Button>
+        )
       )}
       <Modal title="重命名列" open={renaming} onOk={handleRename} onCancel={() => setRenaming(false)}>
         <Input value={renameValue} onChange={(e) => setRenameValue(e.target.value)} />

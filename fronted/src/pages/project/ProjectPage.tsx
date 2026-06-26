@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Typography, Tabs, Row, Col, Button, Space, Dropdown, Segmented, Spin, Empty, Modal, message,
+  Typography, Tabs, Row, Col, Button, Space, Dropdown, Segmented, Spin, Empty, Modal, message, Alert,
 } from 'antd';
 import {
   StarFilled, PlusOutlined, BarChartOutlined, ApartmentOutlined, TeamOutlined,
@@ -199,8 +199,8 @@ export function ProjectPage() {
             onChange={(v) => setFilter(v as FilterMode)}
             options={[
               { label: '全部', value: 'all' },
-              { label: '未完成', value: 'incomplete' },
-              { label: '已完成', value: 'complete' },
+              { label: '未填写', value: 'incomplete' },
+              { label: '已填写', value: 'complete' },
             ]}
           />
           {project.mindmapId && (
@@ -219,6 +219,16 @@ export function ProjectPage() {
           </Dropdown>
         </Space>
       </div>
+
+      {orderedBoards.some((b) => ['ROADMAP', 'MILESTONE', 'SPRINT', 'DEFECT', 'RETROSPECTIVE'].includes(b.type)) && (
+        <Alert
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+          message="Scrum 看板链路"
+          description="产品路线图 → 里程碑 → Sprint → 缺陷看板 / Sprint回顾。上级看板内至少有一张卡片后，方可编辑下级看板；每个 Sprint 对应一组缺陷看板与回顾看板。"
+        />
+      )}
 
       {tabItems.length > 1 && (
         <Tabs

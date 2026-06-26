@@ -27,19 +27,25 @@ public class BoardController {
     }
 
     @PatchMapping("/{id}/cards/position")
-    public ApiResponse<Void> updatePositions(@PathVariable Long id, @RequestBody List<Map<String, Object>> updates) {
-        boardService.updateCardPositions(id, updates);
+    public ApiResponse<Void> updatePositions(@PathVariable Long id, Authentication auth,
+            @RequestBody List<Map<String, Object>> updates) {
+        Long userId = auth != null ? (Long) auth.getPrincipal() : null;
+        boardService.updateCardPositions(id, userId, updates);
         return ApiResponse.ok(null);
     }
 
     @PostMapping("/{id}/milestone-plan")
-    public ApiResponse<BoardDetailDTO> milestonePlan(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        return ApiResponse.ok(scrumChainService.createMilestoneBoard(id, body));
+    public ApiResponse<BoardDetailDTO> milestonePlan(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, Object> body) {
+        Long userId = auth != null ? (Long) auth.getPrincipal() : null;
+        return ApiResponse.ok(scrumChainService.createMilestoneBoard(id, userId, body));
     }
 
     @PostMapping("/{id}/sprint-plan")
-    public ApiResponse<BoardDetailDTO> sprintPlan(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        return ApiResponse.ok(scrumChainService.createSprintBoard(id, body));
+    public ApiResponse<BoardDetailDTO> sprintPlan(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, Object> body) {
+        Long userId = auth != null ? (Long) auth.getPrincipal() : null;
+        return ApiResponse.ok(scrumChainService.createSprintBoard(id, userId, body));
     }
 
     @PostMapping("/{id}/burndown")
@@ -88,6 +94,33 @@ public class BoardController {
     public ApiResponse<BoardDetailDTO> updateSettings(@PathVariable Long id, Authentication auth,
             @RequestBody Map<String, Object> body) {
         return ApiResponse.ok(boardDetailService.updateSettings(id, (Long) auth.getPrincipal(), body));
+    }
+
+    @PutMapping("/{id}/swimlanes/order")
+    public ApiResponse<Void> reorderSwimlanes(@PathVariable Long id, Authentication auth,
+            @RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        java.util.List<Number> ids = (java.util.List<Number>) body.get("swimlaneIds");
+        boardDetailService.reorderSwimlanes(id, (Long) auth.getPrincipal(),
+            ids.stream().map(Number::longValue).toList());
+        return ApiResponse.ok(null);
+    }
+
+    @GetMapping("/{id}/trash")
+    public ApiResponse<java.util.List<Map<String, Object>>> trash(@PathVariable Long id, Authentication auth) {
+        return ApiResponse.ok(boardDetailService.listTrash(id, (Long) auth.getPrincipal()));
+    }
+
+    @PostMapping("/{id}/trash/{cardId}/restore")
+    public ApiResponse<Void> restoreTrashCard(@PathVariable Long id, @PathVariable Long cardId, Authentication auth) {
+        boardDetailService.restoreCard(cardId, (Long) auth.getPrincipal());
+        return ApiResponse.ok(null);
+    }
+
+    @DeleteMapping("/{id}/trash/{cardId}")
+    public ApiResponse<Void> purgeTrashCard(@PathVariable Long id, @PathVariable Long cardId, Authentication auth) {
+        boardDetailService.purgeCard(cardId, (Long) auth.getPrincipal());
+        return ApiResponse.ok(null);
     }
 
     @PostMapping("/{id}/columns")

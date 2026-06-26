@@ -21,8 +21,12 @@ public class BoardService {
     @Autowired private ProjectMapper projectMapper;
     @Autowired private JdbcTemplate jdbcTemplate;
     @Autowired private com.scrum.websocket.BoardWebSocketHandler webSocketHandler;
+    @Autowired private PermissionService permissionService;
+    @Autowired private ActivityLogService activityLogService;
+    @Autowired private BoardChainService boardChainService;
 
     public BoardDetailDTO getBoardDetail(Long boardId, Long userId) {
+        if (userId != null) permissionService.ensureBoardRead(boardId, userId);
         Board board = boardMapper.selectById(boardId);
         if (board == null) throw new RuntimeException("看板不存在");
 
@@ -66,7 +70,25 @@ public class BoardService {
                 .orderByAsc(Card::getSortOrder));
 
         dto.setCards(cards.stream().map(c -> toCardDTO(c)).collect(Collectors.toList()));
+        applyChainMeta(dto, boardId);
+        if (userId != null) {
+            dto.setPermissions(permissionService.getBoardPermissions(boardId, userId));
+        }
         return dto;
+    }
+
+    private void applyChainMeta(BoardDetailDTO dto, Long boardId) {
+        Map<String, Object> chain = boardChainService.getChainMeta(boardId);
+        dto.setCompleted((Boolean) chain.get("completed"));
+        dto.setChainLocked((Boolean) chain.get("chainLocked"));
+        dto.setChainMessage((String) chain.get("chainMessage"));
+        dto.setParentBoardName((String) chain.get("parentBoardName"));
+        if (chain.get("canPlanMilestone") != null) dto.setCanPlanMilestone((Boolean) chain.get("canPlanMilestone"));
+        if (chain.get("canPlanSprint") != null) dto.setCanPlanSprint((Boolean) chain.get("canPlanSprint"));
+        if (chain.get("linkedDefectBoardId") != null) dto.setLinkedDefectBoardId(((Number) chain.get("linkedDefectBoardId")).longValue());
+        if (chain.get("linkedRetroBoardId") != null) dto.setLinkedRetroBoardId(((Number) chain.get("linkedRetroBoardId")).longValue());
+        if (chain.get("linkedSprintId") != null) dto.setLinkedSprintId(((Number) chain.get("linkedSprintId")).longValue());
+        dto.setLinkedSprintName((String) chain.get("linkedSprintName"));
     }
 
     private BoardDetailDTO.CardDTO toCardDTO(Card c) {
@@ -116,12 +138,13 @@ public class BoardService {
     }
 
     @Transactional
-    public void updateCardPositions(Long boardId, List<Map<String, Object>> updates) {
+    public void updateCardPositions(Long boardId, Long userId, List<Map<String, Object>> updates) {
         for (Map<String, Object> u : updates) {
             Long cardId = Long.valueOf(u.get("cardId").toString());
             Card card = cardMapper.selectById(cardId);
             if (card == null) continue;
-            card.setColumnId(Long.valueOf(u.get("columnId").toString()));
+            Long columnId = Long.valueOf(u.get("columnId").toString());
+            card.setColumnId(columnId);
             if (u.get("swimlaneId") != null) card.setSwimlaneId(Long.valueOf(u.get("swimlaneId").toString()));
             if (u.get("sortOrder") != null) card.setSortOrder(Integer.valueOf(u.get("sortOrder").toString()));
             card.setVersion(card.getVersion() + 1);
@@ -131,6 +154,13 @@ public class BoardService {
             payload.put("columnId", card.getColumnId());
             if (card.getSwimlaneId() != null) payload.put("swimlaneId", card.getSwimlaneId());
             webSocketHandler.notifyBoard(boardId, "CARD_MOVED", payload);
+
+            if (userId != null) {
+                BoardColumn col = columnMapper.selectById(columnId);
+                String colName = col != null ? col.getName() : "目标列";
+                activityLogService.record(userId, boardId, cardId,
+                    "移动了卡片「" + card.getTitle() + "」到「" + colName + "」");
+            }
         }
     }
 
@@ -158,6 +188,35 @@ public class BoardService {
         }
         card.setVersion(card.getVersion() + 1);
         cardMapper.updateById(card);
+
+        if (updates.containsKey("memberIds") && updates.get("memberIds") instanceof List<?> memberIds) {
+            jdbcTemplate.update("DELETE FROM card_members WHERE card_id = ?", cardId);
+            for (Object id : memberIds) {
+                jdbcTemplate.update("INSERT INTO card_members (card_id, user_id) VALUES (?, ?)",
+                    cardId, Long.valueOf(id.toString()));
+            }
+        }
+        if (updates.containsKey("labels") && updates.get("labels") instanceof List<?> labels) {
+            jdbcTemplate.update("DELETE FROM card_labels WHERE card_id = ?", cardId);
+            for (Object item : labels) {
+                if (item instanceof Map<?, ?> m) {
+                    jdbcTemplate.update("INSERT INTO card_labels (card_id, name, color) VALUES (?, ?, ?)",
+                        cardId, m.get("name").toString(),
+                        m.get("color") != null ? m.get("color").toString() : "#1677ff");
+                }
+            }
+        }
+        if (updates.containsKey("checklist") && updates.get("checklist") instanceof List<?> checklist) {
+            jdbcTemplate.update("DELETE FROM card_checklist WHERE card_id = ?", cardId);
+            int order = 0;
+            for (Object item : checklist) {
+                if (item instanceof Map<?, ?> m) {
+                    jdbcTemplate.update("INSERT INTO card_checklist (card_id, text, done, sort_order) VALUES (?, ?, ?, ?)",
+                        cardId, m.get("text").toString(),
+                        Boolean.TRUE.equals(m.get("done")), order++);
+                }
+            }
+        }
 
         // Sync references
         List<Card> refs = cardMapper.selectList(
@@ -188,14 +247,7 @@ public class BoardService {
         board.setArchived(false);
         boardMapper.insert(board);
 
-        String[] columns = columnsForTemplate(template != null ? template : board.getType());
-        for (int i = 0; i < columns.length; i++) {
-            BoardColumn col = new BoardColumn();
-            col.setBoardId(board.getId());
-            col.setName(columns[i]);
-            col.setSortOrder(i);
-            columnMapper.insert(col);
-        }
+        insertColumnsForTemplate(board.getId(), template != null ? template : board.getType());
 
         if (addProjectMembers) {
             jdbcTemplate.update(
@@ -214,12 +266,44 @@ public class BoardService {
         return result;
     }
 
+    @Transactional
+    public Board createBoardInChain(Long projectId, String name, String type, Long parentBoardId,
+            java.time.LocalDate startDate, java.time.LocalDate endDate, int sortOrder) {
+        if (!StringUtils.hasText(name)) throw new IllegalArgumentException("看板名称不能为空");
+        Board board = new Board();
+        board.setName(name);
+        board.setType(type);
+        board.setProjectId(projectId);
+        board.setParentBoardId(parentBoardId);
+        board.setSwimlanesEnabled("MILESTONE".equals(type) || "SPRINT".equals(type));
+        board.setStartDate(startDate);
+        board.setEndDate(endDate);
+        board.setSortOrder(sortOrder);
+        board.setVisibility("PROJECT");
+        board.setArchived(false);
+        boardMapper.insert(board);
+        insertColumnsForTemplate(board.getId(), type);
+        return board;
+    }
+
+    private void insertColumnsForTemplate(Long boardId, String template) {
+        String[] columns = columnsForTemplate(template);
+        for (int i = 0; i < columns.length; i++) {
+            BoardColumn col = new BoardColumn();
+            col.setBoardId(boardId);
+            col.setName(columns[i]);
+            col.setSortOrder(i);
+            columnMapper.insert(col);
+        }
+    }
+
     private String[] columnsForTemplate(String template) {
         return switch (template.toUpperCase()) {
             case "ROADMAP" -> new String[]{"史诗故事池", "规划中", "进行中", "已完成"};
             case "MILESTONE" -> new String[]{"用户故事池", "用户故事-待梳理", "用户故事-梳理完成"};
             case "SPRINT" -> new String[]{"待办", "进行中", "测试中", "已完成"};
             case "DEFECT" -> new String[]{"新建", "处理中", "待验证", "已关闭"};
+            case "RETROSPECTIVE" -> new String[]{"做得好", "待改进", "行动项"};
             case "BACKLOG" -> new String[]{"用户故事池", "待梳理", "梳理完成", "实现中", "已完成"};
             case "TEST_CASE" -> new String[]{"待编写", "编写中", "待评审", "已通过"};
             case "OKR" -> new String[]{"目标池", "进行中", "已完成", "已取消"};
