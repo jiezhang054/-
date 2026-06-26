@@ -1,48 +1,70 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  Button, Space, Segmented, Select, List, Dropdown, Modal, Input, message, Empty, Tag,
+  Button, Space, Segmented, Select, Modal, Input, message, Empty, Spin, Collapse,
 } from 'antd';
 import {
   PlusOutlined, StarFilled, StarOutlined, ExportOutlined, InboxOutlined,
   EditOutlined, SwapOutlined, CopyOutlined, DeleteOutlined,
   ArrowUpOutlined, ArrowDownOutlined, VerticalAlignTopOutlined, VerticalAlignBottomOutlined,
+  FolderOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent,
 } from '@dnd-kit/core';
-import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { SortableContext, useSortable, rectSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { MenuProps } from 'antd';
 import { myApi, type MyBoardItem } from '../../api/my';
 import { workspaceApi } from '../../api/boards';
 import { projectsApi } from '../../api/global';
 import { CreateBoardModal } from '../../components/global/CreateBoardModal';
+import { BoardGridCard } from '../../components/project/BoardGridCard';
+import '../../styles/my-boards.css';
 
 type FilterMode = 'all' | 'incomplete' | 'complete';
 
-function SortableItem({ board, menu }: { board: MyBoardItem; menu: MenuProps['items'] }) {
-  const navigate = useNavigate();
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: board.id });
-  const style = { transform: CSS.Transform.toString(transform), transition };
+interface ProjectGroup {
+  projectId: number;
+  projectName: string;
+  boards: MyBoardItem[];
+}
+
+function SortableBoardCard({
+  board,
+  menu,
+  onStar,
+  onUnstar,
+  onArchive,
+}: {
+  board: MyBoardItem;
+  menu: MenuProps['items'];
+  onStar: (id: number) => void;
+  onUnstar: (id: number) => void;
+  onArchive: (id: number) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: board.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <Dropdown menu={{ items: menu }} trigger={['contextMenu']}>
-        <List.Item
-          style={{ cursor: 'pointer', padding: '12px 0' }}
-          onClick={() => navigate(`/board/${board.id}`)}
-          actions={[
-            board.starred ? <StarFilled key="s" style={{ color: '#faad14' }} /> : null,
-          ].filter(Boolean)}
-        >
-          <List.Item.Meta
-            title={<span>{board.name} <Tag>{board.type}</Tag></span>}
-            description={`${board.projectName} · ${board.cardCount} 卡片${board.lastVisitedAt ? ` · 访问于 ${String(board.lastVisitedAt).slice(0, 10)}` : ''}`}
-          />
-        </List.Item>
-      </Dropdown>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`my-boards-sortable${isDragging ? ' my-boards-sortable--dragging' : ''}`}
+      {...attributes}
+      {...listeners}
+    >
+      <BoardGridCard
+        board={board}
+        menuItems={menu}
+        onStar={onStar}
+        onUnstar={onUnstar}
+        onArchive={onArchive}
+      />
     </div>
   );
 }
@@ -59,6 +81,8 @@ export function MyBoardsPage() {
   const [renameName, setRenameName] = useState('');
   const [moveId, setMoveId] = useState<number | null>(null);
   const [moveProjectId, setMoveProjectId] = useState<number>();
+  const [expandedProjectKeys, setExpandedProjectKeys] = useState<string[]>([]);
+  const collapseInitRef = useRef(false);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
@@ -86,10 +110,63 @@ export function MyBoardsPage() {
     onError: () => message.error('排序保存失败'),
   });
 
+  const starMutation = useMutation({
+    mutationFn: (boardId: number) => workspaceApi.starBoard(boardId),
+    onSuccess: invalidate,
+  });
+
+  const unstarMutation = useMutation({
+    mutationFn: (boardId: number) => workspaceApi.unstarBoard(boardId),
+    onSuccess: invalidate,
+  });
+
+  const archiveBoardMutation = useMutation({
+    mutationFn: (boardId: number) => workspaceApi.archiveBoard(boardId),
+    onSuccess: () => { message.success('看板已归档'); invalidate(); },
+  });
+
   const orderedBoards = useMemo(() => {
     const map = new Map(boards.map((b) => [b.id, b]));
     return boardOrder.map((id) => map.get(id)).filter(Boolean) as MyBoardItem[];
   }, [boards, boardOrder]);
+
+  const projectGroups = useMemo(() => {
+    const groups: ProjectGroup[] = [];
+    const index = new Map<number, number>();
+    for (const board of orderedBoards) {
+      let gi = index.get(board.projectId);
+      if (gi === undefined) {
+        gi = groups.length;
+        index.set(board.projectId, gi);
+        groups.push({ projectId: board.projectId, projectName: board.projectName, boards: [] });
+      }
+      groups[gi].boards.push(board);
+    }
+    return groups;
+  }, [orderedBoards]);
+
+  useEffect(() => {
+    if (!projectGroups.length) {
+      collapseInitRef.current = false;
+      setExpandedProjectKeys([]);
+      return;
+    }
+    const keys = projectGroups.map((g) => String(g.projectId));
+    setExpandedProjectKeys((prev) => {
+      const valid = prev.filter((k) => keys.includes(k));
+      if (collapseInitRef.current) return valid.length ? valid : [keys[0]];
+      collapseInitRef.current = true;
+      return [keys[0]];
+    });
+  }, [projectGroups]);
+
+  const expandAllProjects = () => {
+    setExpandedProjectKeys(projectGroups.map((g) => String(g.projectId)));
+  };
+
+  const collapseAllProjects = () => {
+    setExpandedProjectKeys([]);
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -139,9 +216,13 @@ export function MyBoardsPage() {
     }},
   ];
 
+  const handleStar = (boardId: number) => starMutation.mutate(boardId);
+  const handleUnstar = (boardId: number) => unstarMutation.mutate(boardId);
+  const handleArchive = (boardId: number) => archiveBoardMutation.mutate(boardId);
+
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+    <div className="my-boards-page">
+      <div className="my-boards-toolbar">
         <h2 style={{ margin: 0 }}>个人看板</h2>
         <Space wrap>
           <Segmented
@@ -149,8 +230,8 @@ export function MyBoardsPage() {
             onChange={(v) => setFilter(v as FilterMode)}
             options={[
               { label: '全部', value: 'all' },
-              { label: '未完成', value: 'incomplete' },
-              { label: '已完成', value: 'complete' },
+              { label: '未填写', value: 'incomplete' },
+              { label: '已填写', value: 'complete' },
             ]}
           />
           <Select
@@ -170,22 +251,76 @@ export function MyBoardsPage() {
             options={[{ value: 'desc', label: '降序' }, { value: 'asc', label: '升序' }]}
           />
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>新建看板</Button>
+          {projectGroups.length > 1 && (
+            <>
+              <Button size="small" onClick={expandAllProjects}>全部展开</Button>
+              <Button size="small" onClick={collapseAllProjects}>全部收起</Button>
+            </>
+          )}
         </Space>
       </div>
 
-      {isLoading ? null : orderedBoards.length === 0 ? (
+      {isLoading ? (
+        <Spin style={{ display: 'block', margin: '60px auto' }} />
+      ) : orderedBoards.length === 0 ? (
         <Empty description="暂无看板" image={Empty.PRESENTED_IMAGE_SIMPLE} />
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={orderedBoards.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-            <List dataSource={orderedBoards} renderItem={(b) => <SortableItem key={b.id} board={b} menu={boardMenu(b)} />} />
+          <SortableContext items={orderedBoards.map((b) => b.id)} strategy={rectSortingStrategy}>
+            <Collapse
+              className="my-boards-collapse"
+              activeKey={expandedProjectKeys}
+              onChange={(keys) => setExpandedProjectKeys(keys as string[])}
+              items={projectGroups.map((group) => ({
+                key: String(group.projectId),
+                label: (
+                  <div className="my-boards-collapse-label">
+                    <span
+                      className="my-boards-project-title"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/projects/${group.projectId}`);
+                      }}
+                    >
+                      <FolderOutlined style={{ marginRight: 8, color: 'var(--color-primary)' }} />
+                      {group.projectName}
+                      <span className="my-boards-project-count"> · {group.boards.length} 个看板</span>
+                    </span>
+                    <Button
+                      type="link"
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/projects/${group.projectId}`);
+                      }}
+                    >
+                      进入项目
+                    </Button>
+                  </div>
+                ),
+                children: (
+                  <div className="my-boards-project-grid">
+                    {group.boards.map((b) => (
+                      <SortableBoardCard
+                        key={b.id}
+                        board={b}
+                        menu={boardMenu(b)}
+                        onStar={handleStar}
+                        onUnstar={handleUnstar}
+                        onArchive={handleArchive}
+                      />
+                    ))}
+                  </div>
+                ),
+              }))}
+            />
           </SortableContext>
         </DndContext>
       )}
 
-      <div style={{ marginTop: 24 }}>
+      <div className="my-boards-footer">
         <Link to="/my/boards/archived">查看已归档看板</Link>
-        <span style={{ margin: '0 12px', color: '#d9d9d9' }}>|</span>
+        <span className="my-boards-footer-divider">|</span>
         <Link to="/my/projects/archived">查看已归档项目</Link>
       </div>
 
