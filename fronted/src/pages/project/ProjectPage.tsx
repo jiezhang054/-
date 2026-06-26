@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Typography, Tabs, Row, Col, Button, Space, Dropdown, Segmented, Spin, Empty, Modal, message, Alert,
+  Typography, Tabs, Row, Col, Button, Space, Dropdown, Segmented, Spin, Empty, Modal, message,
 } from 'antd';
 import {
   StarFilled, PlusOutlined, BarChartOutlined, ApartmentOutlined, TeamOutlined,
@@ -14,6 +14,7 @@ import {
 import { SortableContext, rectSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { BoardGridCard } from '../../components/project/BoardGridCard';
+import { ScrumChainView } from '../../components/project/ScrumChainView';
 import { EditProjectModal } from '../../components/project/EditProjectModal';
 import { ProjectMembersModal } from '../../components/project/ProjectMembersModal';
 import { CreateBoardModal } from '../../components/global/CreateBoardModal';
@@ -25,6 +26,9 @@ import type { MenuProps } from 'antd';
 const { Title, Text } = Typography;
 
 type FilterMode = 'all' | 'incomplete' | 'complete';
+type ViewMode = 'chain' | 'grid';
+
+const SCRUM_TYPES = new Set(['ROADMAP', 'MILESTONE', 'SPRINT', 'DEFECT', 'RETROSPECTIVE']);
 
 function SortableBoard({ board, onStar, onUnstar, onArchive }: {
   board: BoardSummary;
@@ -53,6 +57,7 @@ export function ProjectPage() {
   const queryClient = useQueryClient();
 
   const [filter, setFilter] = useState<FilterMode>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>('chain');
   const [activeTab, setActiveTab] = useState('all');
   const [editOpen, setEditOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
@@ -143,8 +148,18 @@ export function ProjectPage() {
     return list;
   }, [orderedBoards, filter, activeTab]);
 
+  const isScrumProject = orderedBoards.some((b) => SCRUM_TYPES.has(b.type));
+
+  const gridBoards = useMemo(() => {
+    if (viewMode !== 'chain' || !isScrumProject) return filteredBoards;
+    return filteredBoards.filter((b) => !SCRUM_TYPES.has(b.type));
+  }, [filteredBoards, viewMode, isScrumProject]);
+
   const starred = orderedBoards.filter((b) => b.starred);
-  const normal = filteredBoards.filter((b) => !b.starred);
+  const starredGrid = viewMode === 'chain' && isScrumProject
+    ? starred.filter((b) => !SCRUM_TYPES.has(b.type))
+    : starred;
+  const normal = gridBoards.filter((b) => !b.starred);
 
   const canManage = project?.role === 'OWNER';
 
@@ -187,13 +202,23 @@ export function ProjectPage() {
   if (error || !project) return <Empty description="项目不存在或无权访问" />;
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+    <div className="project-page">
+      <div className="project-page-header">
         <div>
           <Title level={3} style={{ marginBottom: 4 }}>{project.name}</Title>
           {project.description && <Text type="secondary">{project.description}</Text>}
         </div>
-        <Space>
+        <div className="project-page-toolbar">
+          {isScrumProject && (
+            <Segmented
+              value={viewMode}
+              onChange={(v) => setViewMode(v as ViewMode)}
+              options={[
+                { label: '链路视图', value: 'chain' },
+                { label: '网格视图', value: 'grid' },
+              ]}
+            />
+          )}
           <Segmented
             value={filter}
             onChange={(v) => setFilter(v as FilterMode)}
@@ -217,17 +242,11 @@ export function ProjectPage() {
           <Dropdown menu={{ items: projectMenu }}>
             <Button icon={<MoreOutlined />} />
           </Dropdown>
-        </Space>
+        </div>
       </div>
 
-      {orderedBoards.some((b) => ['ROADMAP', 'MILESTONE', 'SPRINT', 'DEFECT', 'RETROSPECTIVE'].includes(b.type)) && (
-        <Alert
-          type="info"
-          showIcon
-          style={{ marginBottom: 16 }}
-          message="Scrum 看板链路"
-          description="产品路线图 → 里程碑 → Sprint → 缺陷看板 / Sprint回顾。上级看板内至少有一张卡片后，方可编辑下级看板；每个 Sprint 对应一组缺陷看板与回顾看板。"
-        />
+      {isScrumProject && viewMode === 'chain' && (
+        <ScrumChainView boards={orderedBoards} />
       )}
 
       {tabItems.length > 1 && (
@@ -240,13 +259,13 @@ export function ProjectPage() {
         />
       )}
 
-      {starred.length > 0 && (
+      {starredGrid.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <div style={{ marginBottom: 12, fontWeight: 600 }}>
+          <div className="page-section-title">
             <StarFilled style={{ color: '#faad14', marginRight: 8 }} />星标看板
           </div>
           <Row gutter={[16, 16]}>
-            {starred.map((b) => (
+            {starredGrid.map((b) => (
               <Col key={b.id}>
                 <BoardGridCard
                   board={b}
@@ -260,9 +279,9 @@ export function ProjectPage() {
         </div>
       )}
 
-      {normal.length === 0 ? (
+      {normal.length === 0 && !(isScrumProject && viewMode === 'chain') ? (
         <Empty description="暂无看板" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-      ) : (
+      ) : normal.length > 0 ? (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={normal.map((b) => b.id)} strategy={rectSortingStrategy}>
             <Row gutter={[16, 16]}>
@@ -278,6 +297,10 @@ export function ProjectPage() {
             </Row>
           </SortableContext>
         </DndContext>
+      ) : null}
+
+      {viewMode === 'grid' && normal.length === 0 && starredGrid.length === 0 && isScrumProject && (
+        <Empty description="暂无看板" image={Empty.PRESENTED_IMAGE_SIMPLE} />
       )}
 
       {editOpen && (

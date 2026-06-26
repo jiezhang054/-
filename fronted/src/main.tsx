@@ -9,6 +9,7 @@ import { antdTheme } from './styles/antd-theme';
 import './i18n';
 import './styles/global.css';
 import './styles/board.css';
+import './styles/project.css';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30000, refetchOnWindowFocus: true } },

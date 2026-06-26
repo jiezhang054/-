@@ -6,6 +6,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import type { MenuProps } from 'antd';
 import type { Board } from '../../types/board';
+import { BoardTypeTag } from '../common/BoardTypeTag';
 import { useUIStore } from '../../stores/useUIStore';
 import { workspaceApi } from '../../api/boards';
 
@@ -62,19 +63,15 @@ export function BoardHeader({ board, canWrite = true, onStarChange, onArchived, 
     { key: 'archive', label: '归档看板', onClick: handleArchive, disabled: !canWrite },
   ];
 
-  const typeLabels: Record<string, string> = {
-    ROADMAP: '路线图', MILESTONE: '里程碑', SPRINT: 'Sprint', DEFECT: '缺陷', RETROSPECTIVE: 'Sprint回顾', NORMAL: '看板',
-  };
-
   return (
-    <div style={{ padding: '12px 16px', background: '#fff', borderBottom: '1px solid #e8e8e8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div style={{ padding: '12px 16px', background: '#fff', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <Space>
         <span style={{ cursor: 'pointer' }} onClick={toggleStar}>
           {board.starred ? <StarFilled style={{ color: '#faad14' }} /> : <StarOutlined />}
         </span>
         <Title level={4} style={{ margin: 0 }}>{board.name}</Title>
         <Text type="secondary">· {board.projectName}</Text>
-        <Tag color="blue">{typeLabels[board.type] ?? board.type}</Tag>
+        <BoardTypeTag type={board.type} />
         {chainLocked && (
           <Tag icon={<LockOutlined />} color="warning">只读</Tag>
         )}
