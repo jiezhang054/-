@@ -55,8 +55,8 @@ export function BoardGridCard({ board, onStar, onUnstar, onArchive, menuItems }:
       {locked && board.chainMessage && (
         <div style={{ fontSize: 11, color: '#d48806', marginTop: 4, lineHeight: 1.4 }}>{board.chainMessage}</div>
       )}
-      {board.type === 'SPRINT' && board.endDate && (
-        <Progress percent={board.completed ? 100 : 60} size="small" style={{ marginTop: 8 }} showInfo={false} />
+      {board.type === 'SPRINT' && board.endDate && board.cardCount > 0 && (
+        <Progress percent={board.completed ? 100 : 0} size="small" style={{ marginTop: 8 }} showInfo={false} />
       )}
     </div>
   );

@@ -80,12 +80,13 @@ public class ScrumChainService {
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> sprints = (List<Map<String, Object>>) request.get("sprints");
-        BoardDetailDTO last = null;
+        Long lastId = null;
 
         for (Map<String, Object> sprintData : sprints) {
             @SuppressWarnings("unchecked")
             List<Number> storyIds = (List<Number>) sprintData.get("storyIds");
-            if (storyIds == null || storyIds.isEmpty()) continue;
+            if (storyIds == null) storyIds = List.of();
+            if (storyIds.isEmpty()) continue;
 
             Board sprint = new Board();
             sprint.setName((String) sprintData.get("name"));
@@ -137,9 +138,12 @@ public class ScrumChainService {
                 }
             }
             boardChainService.createDefectAndRetroBoards(sprint);
-            last = boardService.getBoardDetail(sprint.getId(), userId);
+            lastId = sprint.getId();
         }
-        return last;
+        if (lastId == null) {
+            throw new IllegalArgumentException("请至少为一个 Sprint 分配用户故事");
+        }
+        return boardService.getBoardDetail(lastId, userId);
     }
 
     @Transactional

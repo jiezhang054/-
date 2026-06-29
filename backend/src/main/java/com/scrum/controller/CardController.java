@@ -29,7 +29,7 @@ public class CardController {
         if (card == null) throw new IllegalArgumentException("卡片不存在");
         boardDetailService.ensureAccess(card.getBoardId(), userId);
         boardDetailService.ensureWrite(card.getBoardId(), userId);
-        return ApiResponse.ok(boardService.updateCard(id, body));
+        return ApiResponse.ok(boardService.updateCard(id, body, userId));
     }
 
     @DeleteMapping("/{id}")

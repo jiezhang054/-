@@ -23,6 +23,7 @@ public class BoardService {
     @Autowired private com.scrum.websocket.BoardWebSocketHandler webSocketHandler;
     @Autowired private PermissionService permissionService;
     @Autowired private ActivityLogService activityLogService;
+    @Autowired private UserMapper userMapper;
     @Autowired private BoardChainService boardChainService;
 
     public BoardDetailDTO getBoardDetail(Long boardId, Long userId) {
@@ -69,7 +70,8 @@ public class BoardService {
             new LambdaQueryWrapper<Card>().eq(Card::getBoardId, boardId).eq(Card::getDeleted, false)
                 .orderByAsc(Card::getSortOrder));
 
-        dto.setCards(cards.stream().map(c -> toCardDTO(c)).collect(Collectors.toList()));
+        dto.setCards(boardChainService.filterPlacedCards(board, cards).stream()
+            .map(c -> toCardDTO(c)).collect(Collectors.toList()));
         applyChainMeta(dto, boardId);
         if (userId != null) {
             dto.setPermissions(permissionService.getBoardPermissions(boardId, userId));
@@ -165,10 +167,15 @@ public class BoardService {
     }
 
     @Transactional
-    public BoardDetailDTO.CardDTO updateCard(Long cardId, Map<String, Object> updates) {
+    public BoardDetailDTO.CardDTO updateCard(Long cardId, Map<String, Object> updates, Long userId) {
         Card card = cardMapper.selectById(cardId);
         if (card == null) throw new RuntimeException("卡片不存在");
-        if (updates.containsKey("version")) {
+
+        Set<String> updateKeys = new HashSet<>(updates.keySet());
+        updateKeys.remove("version");
+        boolean memberOnly = updateKeys.equals(Set.of("memberIds"));
+
+        if (!memberOnly && updates.containsKey("version")) {
             int expected = Integer.parseInt(updates.get("version").toString());
             if (card.getVersion() != null && card.getVersion() != expected) {
                 throw new IllegalStateException("卡片已被他人修改，请刷新后重试");
@@ -190,10 +197,29 @@ public class BoardService {
         cardMapper.updateById(card);
 
         if (updates.containsKey("memberIds") && updates.get("memberIds") instanceof List<?> memberIds) {
+            List<Long> previousMembers = jdbcTemplate.queryForList(
+                "SELECT user_id FROM card_members WHERE card_id = ?", Long.class, cardId);
             jdbcTemplate.update("DELETE FROM card_members WHERE card_id = ?", cardId);
+            List<Long> addedMembers = new ArrayList<>();
             for (Object id : memberIds) {
+                Long memberId = Long.valueOf(id.toString());
                 jdbcTemplate.update("INSERT INTO card_members (card_id, user_id) VALUES (?, ?)",
-                    cardId, Long.valueOf(id.toString()));
+                    cardId, memberId);
+                if (!previousMembers.contains(memberId)) {
+                    addedMembers.add(memberId);
+                }
+            }
+            for (Long memberId : addedMembers) {
+                User assignee = userMapper.selectById(memberId);
+                String assigneeName = assignee != null ? assignee.getDisplayName() : "成员";
+                jdbcTemplate.update(
+                    "INSERT INTO notifications (user_id, type, title, content, link_type, link_id, read_flag) " +
+                    "VALUES (?, 'ASSIGN', '卡片指派', ?, 'board', ?, FALSE)",
+                    memberId, "您被指派到卡片「" + card.getTitle() + "」", card.getBoardId());
+                if (userId != null) {
+                    activityLogService.record(userId, card.getBoardId(), cardId,
+                        "将「" + assigneeName + "」指派到卡片「" + card.getTitle() + "」");
+                }
             }
         }
         if (updates.containsKey("labels") && updates.get("labels") instanceof List<?> labels) {

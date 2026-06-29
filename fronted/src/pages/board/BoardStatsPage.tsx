@@ -7,6 +7,7 @@ import { DownloadOutlined, LinkOutlined } from '@ant-design/icons';
 import type { BurndownConfig } from '../../types/board';
 import { useBoardData } from './useBoardData';
 import { boardsApi } from '../../api/boards';
+import { buildBurndownChartOption, buildBurndownConfigFromColumns } from '../../utils/burndown';
 
 const { Title } = Typography;
 
@@ -24,9 +25,7 @@ export function BoardStatsPage() {
 
   useEffect(() => {
     if (board?.columns) {
-      const done = board.columns.filter((c) => c.name.includes('完成')).map((c) => c.id);
-      const todo = board.columns.filter((c) => !c.name.includes('完成')).map((c) => c.id);
-      setConfig((c) => ({ ...c, doneColumnIds: done, todoColumnIds: todo }));
+      setConfig(buildBurndownConfigFromColumns(board.columns));
     }
   }, [board]);
 
@@ -42,16 +41,7 @@ export function BoardStatsPage() {
   const completed = board.cards.filter((c) => config.doneColumnIds.includes(c.columnId))
     .reduce((s, c) => s + (c.workload ?? 1), 0);
 
-  const chartOption = {
-    tooltip: { trigger: 'axis' },
-    legend: { data: ['实际剩余', '参考线'] },
-    xAxis: { type: 'category', data: burndown.map((d) => d.date) },
-    yAxis: { type: 'value', name: config.mode === 'workload' ? '工作量(SP)' : '卡片数' },
-    series: [
-      { name: '实际剩余', type: 'line', data: burndown.map((d) => d.remaining), itemStyle: { color: '#1677ff' }, smooth: true },
-      { name: '参考线', type: 'line', data: burndown.map((d) => d.reference), lineStyle: { type: 'dashed', color: '#8f959e' } },
-    ],
-  };
+  const chartOption = buildBurndownChartOption(burndown, config.mode);
 
   const exportPng = () => {
     const chart = document.querySelector('.burndown-chart canvas') as HTMLCanvasElement | null;

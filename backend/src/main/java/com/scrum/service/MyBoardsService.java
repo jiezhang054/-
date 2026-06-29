@@ -42,12 +42,10 @@ public class MyBoardsService {
 
         for (Map<String, Object> row : rows) {
             Long boardId = ((Number) row.get("id")).longValue();
-            boolean completed = boardChainService.isBoardCompleted(boardId);
+            long cardCount = boardChainService.countPlacedCards(boardId);
+            boolean completed = cardCount > 0;
             if ("incomplete".equals(filter) && completed) continue;
             if ("complete".equals(filter) && !completed) continue;
-
-            long cardCount = cardMapper.selectCount(
-                new LambdaQueryWrapper<Card>().eq(Card::getBoardId, boardId).eq(Card::getDeleted, false));
 
             Map<String, Object> item = new HashMap<>();
             item.put("id", boardId);

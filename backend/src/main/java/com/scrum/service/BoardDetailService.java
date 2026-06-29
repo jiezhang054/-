@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,6 +51,8 @@ public class BoardDetailService {
         ensureWrite(boardId, userId);
         Board board = boardMapper.selectById(boardId);
         if (board == null) throw new IllegalArgumentException("看板不存在");
+        LocalDate oldStart = board.getStartDate();
+        LocalDate oldEnd = board.getEndDate();
         if (body.containsKey("name") && StringUtils.hasText((String) body.get("name"))) {
             board.setName((String) body.get("name"));
         }
@@ -66,8 +69,57 @@ public class BoardDetailService {
             board.setEndDate(d != null && !d.isBlank() ? LocalDate.parse(d) : null);
         }
         boardMapper.updateById(board);
+        if ("MILESTONE".equals(board.getType())
+            && board.getStartDate() != null && board.getEndDate() != null
+            && oldStart != null && oldEnd != null
+            && (!board.getStartDate().equals(oldStart) || !board.getEndDate().equals(oldEnd))) {
+            cascadeMilestoneDates(board, oldStart, oldEnd);
+        }
         logActivity(userId, boardId, null, "更新了看板设置");
         return boardService.getBoardDetail(boardId, userId);
+    }
+
+    private void cascadeMilestoneDates(Board milestone, LocalDate oldStart, LocalDate oldEnd) {
+        LocalDate newStart = milestone.getStartDate();
+        LocalDate newEnd = milestone.getEndDate();
+        long oldSpan = ChronoUnit.DAYS.between(oldStart, oldEnd);
+        long newSpan = ChronoUnit.DAYS.between(newStart, newEnd);
+        if (oldSpan <= 0 || newSpan <= 0) return;
+
+        List<Board> sprints = boardMapper.selectList(
+            new LambdaQueryWrapper<Board>().eq(Board::getParentBoardId, milestone.getId())
+                .eq(Board::getType, "SPRINT").eq(Board::getArchived, false));
+
+        for (Board sprint : sprints) {
+            if (sprint.getStartDate() == null || sprint.getEndDate() == null) {
+                sprint.setStartDate(newStart);
+                sprint.setEndDate(newEnd);
+            } else {
+                long offset = ChronoUnit.DAYS.between(oldStart, sprint.getStartDate());
+                long duration = Math.max(1, ChronoUnit.DAYS.between(sprint.getStartDate(), sprint.getEndDate()));
+                long newOffset = Math.round(offset * (double) newSpan / oldSpan);
+                LocalDate sprintStart = newStart.plusDays(Math.min(newOffset, newSpan));
+                long newDuration = Math.max(1, Math.round(duration * (double) newSpan / oldSpan));
+                LocalDate sprintEnd = sprintStart.plusDays(newDuration);
+                if (sprintEnd.isAfter(newEnd)) sprintEnd = newEnd;
+                if (sprintStart.isAfter(sprintEnd)) sprintStart = sprintEnd;
+                sprint.setStartDate(sprintStart);
+                sprint.setEndDate(sprintEnd);
+            }
+            boardMapper.updateById(sprint);
+            syncLinkedChildBoardDates(sprint);
+        }
+    }
+
+    private void syncLinkedChildBoardDates(Board sprint) {
+        List<Board> linked = boardMapper.selectList(
+            new LambdaQueryWrapper<Board>().eq(Board::getParentBoardId, sprint.getId())
+                .in(Board::getType, "DEFECT", "RETROSPECTIVE"));
+        for (Board child : linked) {
+            child.setStartDate(sprint.getStartDate());
+            child.setEndDate(sprint.getEndDate());
+            boardMapper.updateById(child);
+        }
     }
 
     public List<Map<String, Object>> getActivities(Long boardId, Long userId, int limit) {

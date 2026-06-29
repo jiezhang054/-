@@ -1,7 +1,9 @@
 import { Modal, Form, Input, message } from 'antd';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { teamsApi } from '../../api/teams';
 import { useTeamStore } from '../../stores/useTeamStore';
+import { afterTeamSwitch } from '../../utils/teamSwitch';
 
 interface Props {
   open: boolean;
@@ -10,6 +12,8 @@ interface Props {
 
 export function CreateTeamModal({ open, onClose }: Props) {
   const [form] = Form.useForm();
+  const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { loadContext, switchTeam } = useTeamStore();
 
@@ -19,7 +23,7 @@ export function CreateTeamModal({ open, onClose }: Props) {
       message.success('团队创建成功');
       await loadContext();
       await switchTeam(team.id);
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      afterTeamSwitch(queryClient, navigate, location.pathname);
       form.resetFields();
       onClose();
     },

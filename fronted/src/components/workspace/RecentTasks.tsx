@@ -1,4 +1,5 @@
 import { Card, List, Badge, Dropdown, Empty } from 'antd';
+import { AppstoreOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import type { MenuProps } from 'antd';
@@ -10,10 +11,11 @@ interface Props {
   tasks: WorkspaceTask[];
   columnOptions?: Record<number, { id: number; name: string }[]>;
   onCardClick?: (task: WorkspaceTask) => void;
+  onBoardClick?: (task: WorkspaceTask) => void;
   onQuickMove?: (cardId: number, columnId: number) => void;
 }
 
-export function RecentTasks({ tasks, columnOptions, onCardClick, onQuickMove }: Props) {
+export function RecentTasks({ tasks, columnOptions, onCardClick, onBoardClick, onQuickMove }: Props) {
   const { t } = useTranslation();
 
   return (
@@ -23,7 +25,7 @@ export function RecentTasks({ tasks, columnOptions, onCardClick, onQuickMove }: 
       size="small"
     >
       {tasks.length === 0 ? (
-        <Empty description="暂无未完成任务，快去项目看板中添加吧" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        <Empty description="暂无事项" image={Empty.PRESENTED_IMAGE_SIMPLE} />
       ) : (
         <div className="workspace-panel__scroll">
           <List
@@ -46,17 +48,40 @@ export function RecentTasks({ tasks, columnOptions, onCardClick, onQuickMove }: 
                 <List.Item
                   style={{ cursor: 'pointer', borderLeft: `4px solid ${overdue ? '#ff4d4f' : CARD_TYPE_COLORS[type as keyof typeof CARD_TYPE_COLORS] || '#1677ff'}`, paddingLeft: 8 }}
                   onClick={() => onCardClick?.(task)}
-                  actions={cols.length ? [
-                    <Dropdown key="move" menu={{ items: moveMenu }} trigger={['click']}>
-                      <a onClick={(e) => e.stopPropagation()}>改状态</a>
-                    </Dropdown>,
-                  ] : undefined}
+                  actions={[
+                    <a
+                      key="board"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onBoardClick?.(task);
+                      }}
+                    >
+                      <AppstoreOutlined /> 看板
+                    </a>,
+                    ...(cols.length ? [
+                      <Dropdown key="move" menu={{ items: moveMenu }} trigger={['click']}>
+                        <a onClick={(e) => e.stopPropagation()}>改状态</a>
+                      </Dropdown>,
+                    ] : []),
+                  ]}
                 >
                   <List.Item.Meta
                     title={task.title}
                     description={
                       <>
-                        <div>{task.columnName} · {task.boardName} / {task.projectName}</div>
+                        <div>
+                          {task.columnName}
+                          {' · '}
+                          <a
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onBoardClick?.(task);
+                            }}
+                          >
+                            {task.boardName}
+                          </a>
+                          {task.projectName ? ` / ${task.projectName}` : null}
+                        </div>
                         {task.dueDate && <div>截止 {dayjs(task.dueDate).format('MM-DD')}</div>}
                       </>
                     }

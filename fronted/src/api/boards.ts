@@ -71,18 +71,76 @@ export const boardsApi = {
 };
 
 
+function pickField<T>(row: Record<string, unknown>, key: string): T | undefined {
+  if (row[key] !== undefined && row[key] !== null) return row[key] as T;
+  const lower = key.toLowerCase();
+  if (row[lower] !== undefined && row[lower] !== null) return row[lower] as T;
+  return undefined;
+}
+
+function normalizeWorkspaceTask(raw: Record<string, unknown>): WorkspaceTask {
+  return {
+    id: Number(pickField(raw, 'id')),
+    title: String(pickField<string>(raw, 'title') ?? ''),
+    type: String(pickField<string>(raw, 'type') ?? 'TASK'),
+    workload: pickField<number>(raw, 'workload'),
+    dueDate: pickField<string>(raw, 'dueDate'),
+    startDate: pickField<string>(raw, 'startDate'),
+    boardId: Number(pickField(raw, 'boardId')),
+    columnId: Number(pickField(raw, 'columnId')),
+    boardName: pickField<string>(raw, 'boardName'),
+    boardType: pickField<string>(raw, 'boardType'),
+    projectName: pickField<string>(raw, 'projectName'),
+    projectId: Number(pickField(raw, 'projectId')),
+    columnName: pickField<string>(raw, 'columnName'),
+    memberIds: (pickField<number[]>(raw, 'memberIds') ?? []) as number[],
+  };
+}
+
+function normalizeActivity(raw: Record<string, unknown>): ActivityItem {
+  return {
+    id: Number(pickField(raw, 'id')),
+    userId: Number(pickField(raw, 'userId')),
+    userName: String(pickField<string>(raw, 'userName') ?? ''),
+    action: String(pickField<string>(raw, 'action') ?? ''),
+    cardTitle: pickField<string>(raw, 'cardTitle'),
+    cardId: pickField<number>(raw, 'cardId'),
+    boardId: pickField<number>(raw, 'boardId'),
+    createdAt: String(pickField<string>(raw, 'createdAt') ?? ''),
+  };
+}
+
+function normalizeRecentVisit(raw: Record<string, unknown>): RecentVisit {
+  return {
+    id: Number(pickField(raw, 'id')),
+    type: pickField<RecentVisit['type']>(raw, 'type') ?? 'board',
+    targetId: Number(pickField(raw, 'targetId')),
+    name: String(pickField<string>(raw, 'name') ?? ''),
+    visitedAt: String(pickField<string>(raw, 'visitedAt') ?? ''),
+  };
+}
+
 export const workspaceApi = {
   dashboard: () =>
     apiClient.get<ApiResponse<{
-      recentTasks: WorkspaceTask[];
-      starredBoards: { id: number; name: string; projectName: string }[];
-      recentVisits: RecentVisit[];
-      activities: ActivityItem[];
-    }>>('/workspace/dashboard').then((r) => r.data.data),
+      recentTasks: Record<string, unknown>[];
+      starredBoards: Record<string, unknown>[];
+      recentVisits: Record<string, unknown>[];
+      activities: Record<string, unknown>[];
+    }>>('/workspace/dashboard').then((r) => ({
+      recentTasks: (r.data.data.recentTasks ?? []).map(normalizeWorkspaceTask),
+      starredBoards: (r.data.data.starredBoards ?? []).map((b) => ({
+        id: Number(pickField(b, 'id')),
+        name: String(pickField<string>(b, 'name') ?? ''),
+        projectName: String(pickField<string>(b, 'projectName') ?? ''),
+      })),
+      recentVisits: (r.data.data.recentVisits ?? []).map(normalizeRecentVisit),
+      activities: (r.data.data.activities ?? []).map(normalizeActivity),
+    })),
 
   activities: (offset = 0, limit = 20) =>
-    apiClient.get<ApiResponse<ActivityItem[]>>('/workspace/activities', { params: { offset, limit } })
-      .then((r) => r.data.data),
+    apiClient.get<ApiResponse<Record<string, unknown>[]>>('/workspace/activities', { params: { offset, limit } })
+      .then((r) => (r.data.data ?? []).map(normalizeActivity)),
 
   removeVisit: (id: number) => apiClient.delete(`/workspace/visits/${id}`),
 
@@ -91,8 +149,12 @@ export const workspaceApi = {
       .then((r) => r.data.data),
 
   getBoardColumns: (boardId: number) =>
-    apiClient.get<ApiResponse<{ id: number; name: string; sortOrder: number }[]>>(`/boards/${boardId}/columns`)
-      .then((r) => r.data.data),
+    apiClient.get<ApiResponse<Record<string, unknown>[]>>(`/boards/${boardId}/columns`)
+      .then((r) => (r.data.data ?? []).map((col) => ({
+        id: Number(pickField(col, 'id')),
+        name: String(pickField<string>(col, 'name') ?? ''),
+        sortOrder: Number(pickField(col, 'sortOrder') ?? 0),
+      }))),
 
   starBoard: (boardId: number) => apiClient.post(`/boards/${boardId}/star`),
   unstarBoard: (boardId: number) => apiClient.delete(`/boards/${boardId}/star`),

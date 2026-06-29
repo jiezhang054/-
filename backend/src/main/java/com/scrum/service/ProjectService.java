@@ -391,10 +391,9 @@ public class ProjectService {
         bs.put("startDate", b.getStartDate() != null ? b.getStartDate().toString() : null);
         bs.put("endDate", b.getEndDate() != null ? b.getEndDate().toString() : null);
 
-        long cardCount = cardMapper.selectCount(
-            new LambdaQueryWrapper<Card>().eq(Card::getBoardId, b.getId()).eq(Card::getDeleted, false));
+        long cardCount = boardChainService.countPlacedCards(b.getId());
         bs.put("cardCount", cardCount);
-        bs.put("completed", boardChainService.isBoardCompleted(b.getId()));
+        bs.put("completed", cardCount > 0);
         bs.put("chainLocked", boardChainService.isChainLocked(b.getId()));
         bs.put("chainMessage", boardChainService.getChainLockMessage(b.getId()));
         bs.put("parentBoardId", b.getParentBoardId());

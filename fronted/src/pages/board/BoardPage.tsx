@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Spin, message, Alert } from 'antd';
@@ -41,6 +41,8 @@ export function BoardPage() {
     membersModalOpen, setMembersModalOpen, activityDrawerOpen, setActivityDrawerOpen,
     settingsModalOpen, setSettingsModalOpen, boardFilter,
   } = useUIStore();
+
+  const [sprintPlanLoading, setSprintPlanLoading] = useState(false);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['board', id],
@@ -107,7 +109,14 @@ export function BoardPage() {
 
   return (
     <div onContextMenu={(e) => e.preventDefault()}>
-      <BoardHeader board={board} canWrite={canWrite} onArchived={() => navigate('/my/boards')} onSettings={() => setSettingsModalOpen(true)} onRefresh={() => refetch()} />
+      <BoardHeader
+        board={board}
+        canWrite={canWrite}
+        onArchived={() => navigate('/my/boards')}
+        onSettings={() => setSettingsModalOpen(true)}
+        onRefresh={() => refetch()}
+        onBoardUpdated={handleBoardUpdated}
+      />
       {chainLocked && board.chainMessage && (
         <Alert type="warning" showIcon message={board.chainMessage} banner style={{ marginBottom: 0 }} />
       )}
@@ -128,7 +137,16 @@ export function BoardPage() {
           }}
         />
       </BoardDndContext>
-      <CardDetailDrawer card={selectedCard} open={cardDrawerOpen} canWrite={canWrite} onClose={closeCardDrawer} onRefresh={() => refetch()} />
+      <CardDetailDrawer
+        card={selectedCard}
+        open={cardDrawerOpen}
+        canWrite={canWrite}
+        onClose={closeCardDrawer}
+        onRefresh={() => {
+          refetch();
+          queryClient.invalidateQueries({ queryKey: ['workspace'] });
+        }}
+      />
       <BoardMembersModal open={membersModalOpen} boardId={board.id} onClose={() => setMembersModalOpen(false)} />
       <BoardSettingsModal open={settingsModalOpen} board={board} onClose={() => setSettingsModalOpen(false)} onUpdated={handleBoardUpdated} />
       <BoardActivityDrawer
@@ -140,17 +158,33 @@ export function BoardPage() {
       <SprintPlanModal
         open={sprintPlanOpen}
         onClose={() => setSprintPlanOpen(false)}
+        loading={sprintPlanLoading}
+        milestoneStart={board.startDate}
+        milestoneEnd={board.endDate}
         availableStories={availableStories.length ? availableStories : board.cards.filter((c) => c.type === 'USER_STORY')}
         onConfirm={async (sprints) => {
+          setSprintPlanLoading(true);
           try {
-            const res = await boardsApi.sprintPlan(board.id, { sprints: sprints.map((s) => ({
-              name: s.name, startDate: s.startDate, endDate: s.endDate, storyIds: s.stories.map((st) => st.id),
-            })) });
+            const res = await boardsApi.sprintPlan(board.id, {
+              sprints: sprints
+                .filter((s) => s.stories.length > 0)
+                .map((s) => ({
+                  name: s.name,
+                  startDate: s.startDate,
+                  endDate: s.endDate,
+                  storyIds: s.stories.map((st) => st.id),
+                })),
+            });
+            setSprintPlanOpen(false);
             message.success('Sprint 看板已创建');
+            queryClient.invalidateQueries({ queryKey: ['project', board.projectId] });
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
             if (res?.id) navigate(`/board/${res.id}`);
           } catch (err: unknown) {
             const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
             message.error(msg || 'Sprint 规划失败');
+          } finally {
+            setSprintPlanLoading(false);
           }
         }}
       />

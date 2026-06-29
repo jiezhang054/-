@@ -8,6 +8,7 @@ import type { CardItem, Label } from '../../types/board';
 import { CardTypeTag } from '../common/CardTypeTag';
 import { useBoardStore } from '../../stores/useUIStore';
 import { boardsApi } from '../../api/boards';
+import { normalizeCard } from '../../utils/board';
 
 interface Props {
   card: CardItem | null;
@@ -28,19 +29,50 @@ const LABEL_PRESETS = [
 export function CardDetailDrawer({ card, open, canWrite = true, onClose, onRefresh }: Props) {
   const { updateCard, members } = useBoardStore();
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const pendingRef = useRef<Partial<CardItem>>({});
+  const savingRef = useRef(false);
   const [commentText, setCommentText] = useState('');
 
-  const persistCard = useCallback((cardId: number, updates: Partial<CardItem>, current?: CardItem) => {
+  const flushSave = useCallback(async (cardId: number) => {
+    if (savingRef.current) return;
+    const pending = pendingRef.current;
+    const keys = Object.keys(pending);
+    if (keys.length === 0) return;
+
+    pendingRef.current = {};
+    savingRef.current = true;
+    try {
+      const latest = useBoardStore.getState().getCard(cardId);
+      const saved = normalizeCard(
+        await boardsApi.updateCard(cardId, { ...pending, version: latest?.version }),
+      );
+      updateCard(cardId, saved);
+    } catch (err: unknown) {
+      pendingRef.current = { ...pending, ...pendingRef.current };
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      if (msg?.includes('修改')) {
+        message.warning(msg);
+        onRefresh?.();
+      }
+    } finally {
+      savingRef.current = false;
+      if (Object.keys(pendingRef.current).length > 0) {
+        saveTimer.current = setTimeout(() => { void flushSave(cardId); }, 300);
+      }
+    }
+  }, [updateCard, onRefresh]);
+
+  const persistCard = useCallback((
+    cardId: number,
+    updates: Partial<CardItem>,
+    options?: { immediate?: boolean },
+  ) => {
     updateCard(cardId, updates);
+    pendingRef.current = { ...pendingRef.current, ...updates };
     clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      const payload = { ...updates, version: current?.version ?? updates.version };
-      boardsApi.updateCard(cardId, payload).catch((err: unknown) => {
-        const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-        if (msg?.includes('修改')) message.warning(msg);
-      });
-    }, 500);
-  }, [updateCard]);
+    const delay = options?.immediate || Object.prototype.hasOwnProperty.call(updates, 'memberIds') ? 0 : 500;
+    saveTimer.current = setTimeout(() => { void flushSave(cardId); }, delay);
+  }, [updateCard, flushSave]);
 
   const handleSplit = async () => {
     if (!card) return;
@@ -76,7 +108,7 @@ export function CardDetailDrawer({ card, open, canWrite = true, onClose, onRefre
         color: preset?.color ?? existing?.color ?? '#1677ff',
       };
     });
-    persistCard(card.id, { labels }, card);
+    persistCard(card.id, { labels });
   };
 
   if (!card) return null;
@@ -100,7 +132,7 @@ export function CardDetailDrawer({ card, open, canWrite = true, onClose, onRefre
         <Input
           value={card.title}
           disabled={!canWrite}
-          onChange={(e) => persistCard(card.id, { title: e.target.value }, card)}
+          onChange={(e) => persistCard(card.id, { title: e.target.value })}
         />
       </div>
 
@@ -110,7 +142,7 @@ export function CardDetailDrawer({ card, open, canWrite = true, onClose, onRefre
           rows={4}
           disabled={!canWrite}
           value={card.description || ''}
-          onChange={(e) => persistCard(card.id, { description: e.target.value }, card)}
+          onChange={(e) => persistCard(card.id, { description: e.target.value })}
           placeholder="添加描述..."
         />
       </div>
@@ -123,7 +155,7 @@ export function CardDetailDrawer({ card, open, canWrite = true, onClose, onRefre
           disabled={!canWrite}
           placeholder="指派成员"
           value={card.memberIds ?? []}
-          onChange={(ids) => persistCard(card.id, { memberIds: ids }, card)}
+          onChange={(ids) => persistCard(card.id, { memberIds: ids }, { immediate: true })}
           options={members.map((m) => ({ value: m.id, label: m.displayName }))}
         />
       </div>
@@ -152,14 +184,14 @@ export function CardDetailDrawer({ card, open, canWrite = true, onClose, onRefre
       <Space style={{ marginBottom: 16 }} size="large">
         <div>
           <div style={{ fontSize: 12, color: '#8f959e' }}>故事点</div>
-          <InputNumber min={0} disabled={!canWrite} value={card.workload} onChange={(v) => persistCard(card.id, { workload: v || 0 }, card)} />
+          <InputNumber min={0} disabled={!canWrite} value={card.workload} onChange={(v) => persistCard(card.id, { workload: v || 0 })} />
         </div>
         <div>
           <div style={{ fontSize: 12, color: '#8f959e' }}>截止日期</div>
           <DatePicker
             disabled={!canWrite}
             value={card.dueDate ? dayjs(card.dueDate) : null}
-            onChange={(d) => persistCard(card.id, { dueDate: d?.format('YYYY-MM-DD') }, card)}
+            onChange={(d) => persistCard(card.id, { dueDate: d?.format('YYYY-MM-DD') })}
           />
         </div>
       </Space>

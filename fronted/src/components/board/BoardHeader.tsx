@@ -8,6 +8,7 @@ import type { MenuProps } from 'antd';
 import type { Board } from '../../types/board';
 import { useUIStore } from '../../stores/useUIStore';
 import { workspaceApi } from '../../api/boards';
+import { MilestoneDurationEditor } from './MilestoneDurationEditor';
 
 const { Title, Text } = Typography;
 
@@ -18,9 +19,10 @@ interface Props {
   onArchived?: () => void;
   onSettings?: () => void;
   onRefresh?: () => void;
+  onBoardUpdated?: (board: Board) => void;
 }
 
-export function BoardHeader({ board, canWrite = true, onStarChange, onArchived, onSettings, onRefresh }: Props) {
+export function BoardHeader({ board, canWrite = true, onStarChange, onArchived, onSettings, onRefresh, onBoardUpdated }: Props) {
   const navigate = useNavigate();
   const { setSprintPlanOpen, setMilestonePlanOpen, setActivityDrawerOpen } = useUIStore();
 
@@ -80,6 +82,13 @@ export function BoardHeader({ board, canWrite = true, onStarChange, onArchived, 
         )}
         {board.completed && !chainLocked && (
           <Tag color="success">已填写</Tag>
+        )}
+        {board.type === 'MILESTONE' && (
+          <MilestoneDurationEditor
+            board={board}
+            canWrite={canWrite}
+            onUpdated={(updated) => onBoardUpdated?.(updated)}
+          />
         )}
       </Space>
       <Space>

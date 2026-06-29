@@ -17,30 +17,38 @@ public class WorkspaceService {
     @Autowired private BoardMapper boardMapper;
     @Autowired private JdbcTemplate jdbcTemplate;
     @Autowired private ActivityLogService activityLogService;
+    @Autowired private PermissionService permissionService;
 
     public Map<String, Object> getDashboard(Long userId) {
+        Long teamId = permissionService.getCurrentTeamId(userId);
         Map<String, Object> result = new HashMap<>();
-        result.put("recentTasks", getRecentTasks(userId));
-        result.put("starredBoards", getStarredBoards(userId));
-        result.put("recentVisits", getRecentVisits(userId));
-        result.put("activities", getActivities(userId, 0, 10));
+        result.put("recentTasks", getRecentTasks(userId, teamId));
+        result.put("starredBoards", getStarredBoards(userId, teamId));
+        result.put("recentVisits", getRecentVisits(userId, teamId));
+        result.put("activities", getActivities(userId, teamId, 0, 10));
         return result;
     }
 
-    public List<Map<String, Object>> getRecentTasks(Long userId) {
-        List<Map<String, Object>> tasks = jdbcTemplate.queryForList(
+    public List<Map<String, Object>> getRecentTasks(Long userId, Long teamId) {
+        String teamFilter = teamId == null ? "p.team_id IS NULL" : "p.team_id = ?";
+        String sql =
             "SELECT c.id, c.title, c.type, c.workload, c.due_date as dueDate, c.start_date as startDate, " +
             "c.board_id as boardId, c.column_id as columnId, b.name as boardName, b.type as boardType, " +
             "p.name as projectName, p.id as projectId, bc.name as columnName " +
             "FROM cards c " +
-            "JOIN card_members cm ON c.id = cm.card_id " +
+            "JOIN card_members cm ON c.id = cm.card_id AND cm.user_id = ? " +
             "JOIN boards b ON c.board_id = b.id " +
             "JOIN projects p ON b.project_id = p.id " +
+            "JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = ? " +
             "JOIN board_columns bc ON c.column_id = bc.id " +
-            "WHERE cm.user_id = ? AND c.deleted = FALSE AND (b.archived IS NULL OR b.archived = FALSE) " +
+            "WHERE c.deleted = FALSE AND (b.archived IS NULL OR b.archived = FALSE) " +
+            "AND (p.archived IS NULL OR p.archived = FALSE) AND " + teamFilter + " " +
             "AND bc.name NOT LIKE '%已完成%' AND bc.name NOT LIKE '%关闭%' " +
-            "ORDER BY CASE WHEN c.due_date IS NULL THEN 1 ELSE 0 END, c.due_date ASC LIMIT 20",
-            userId);
+            "ORDER BY CASE WHEN c.due_date IS NULL THEN 1 ELSE 0 END, c.due_date ASC LIMIT 20";
+
+        List<Map<String, Object>> tasks = teamId == null
+            ? jdbcTemplate.queryForList(sql, userId, userId)
+            : jdbcTemplate.queryForList(sql, userId, userId, teamId);
 
         for (Map<String, Object> task : tasks) {
             Long cardId = ((Number) task.get("id")).longValue();
@@ -48,32 +56,118 @@ public class WorkspaceService {
                 "SELECT user_id FROM card_members WHERE card_id = ?", Long.class, cardId);
             task.put("memberIds", memberIds);
         }
-        return tasks;
+        return tasks.stream().map(this::normalizeRecentTask).toList();
     }
 
-    public List<Map<String, Object>> getStarredBoards(Long userId) {
-        return jdbcTemplate.queryForList(
+    private Map<String, Object> normalizeRecentTask(Map<String, Object> row) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", rowVal(row, "id"));
+        m.put("title", rowVal(row, "title"));
+        m.put("type", rowVal(row, "type"));
+        m.put("workload", rowVal(row, "workload"));
+        m.put("dueDate", rowVal(row, "dueDate"));
+        m.put("startDate", rowVal(row, "startDate"));
+        m.put("boardId", rowVal(row, "boardId"));
+        m.put("columnId", rowVal(row, "columnId"));
+        m.put("boardName", rowVal(row, "boardName"));
+        m.put("boardType", rowVal(row, "boardType"));
+        m.put("projectName", rowVal(row, "projectName"));
+        m.put("projectId", rowVal(row, "projectId"));
+        m.put("columnName", rowVal(row, "columnName"));
+        m.put("memberIds", row.get("memberIds"));
+        return m;
+    }
+
+    private Object rowVal(Map<String, Object> row, String key) {
+        if (row.containsKey(key)) return row.get(key);
+        return row.get(key.toLowerCase());
+    }
+
+    private List<Map<String, Object>> normalizeRows(List<Map<String, Object>> rows, String... keys) {
+        return rows.stream().map(row -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            for (String key : keys) {
+                m.put(key, rowVal(row, key));
+            }
+            return m;
+        }).toList();
+    }
+
+    public List<Map<String, Object>> getStarredBoards(Long userId, Long teamId) {
+        String teamFilter = teamId == null ? "p.team_id IS NULL" : "p.team_id = ?";
+        String sql =
             "SELECT b.id, b.name, p.name as projectName FROM starred_boards sb " +
-            "JOIN boards b ON sb.board_id = b.id JOIN projects p ON b.project_id = p.id " +
-            "WHERE sb.user_id = ? AND (b.archived IS NULL OR b.archived = FALSE) ORDER BY sb.id DESC",
-            userId);
+            "JOIN boards b ON sb.board_id = b.id " +
+            "JOIN projects p ON b.project_id = p.id " +
+            "JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = ? " +
+            "WHERE sb.user_id = ? AND (b.archived IS NULL OR b.archived = FALSE) " +
+            "AND (p.archived IS NULL OR p.archived = FALSE) AND " + teamFilter + " " +
+            "ORDER BY sb.id DESC";
+        List<Map<String, Object>> rows = teamId == null
+            ? jdbcTemplate.queryForList(sql, userId, userId)
+            : jdbcTemplate.queryForList(sql, userId, userId, teamId);
+        return normalizeRows(rows, "id", "name", "projectName");
     }
 
-    public List<Map<String, Object>> getRecentVisits(Long userId) {
-        return jdbcTemplate.queryForList(
-            "SELECT id, target_type as type, target_id as targetId, name, visited_at as visitedAt " +
-            "FROM recent_visits WHERE user_id = ? ORDER BY visited_at DESC LIMIT 15", userId);
+    public List<Map<String, Object>> getRecentVisits(Long userId, Long teamId) {
+        String teamFilter = teamId == null ? "p.team_id IS NULL" : "p.team_id = ?";
+        String projectScope =
+            "EXISTS (SELECT 1 FROM projects p JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = ? " +
+            "WHERE p.id = rv.target_id AND (p.archived IS NULL OR p.archived = FALSE) AND " + teamFilter + ")";
+        String boardScope =
+            "EXISTS (SELECT 1 FROM boards b JOIN projects p ON b.project_id = p.id " +
+            "JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = ? " +
+            "WHERE b.id = rv.target_id AND (p.archived IS NULL OR p.archived = FALSE) AND " + teamFilter + ")";
+        String mindmapScope =
+            "EXISTS (SELECT 1 FROM mindmaps m JOIN projects p ON m.project_id = p.id " +
+            "JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = ? " +
+            "WHERE m.id = rv.target_id AND (p.archived IS NULL OR p.archived = FALSE) AND " + teamFilter + ")";
+
+        String sql =
+            "SELECT rv.id, rv.target_type as type, rv.target_id as targetId, rv.name, rv.visited_at as visitedAt " +
+            "FROM recent_visits rv WHERE rv.user_id = ? AND (" +
+            "(rv.target_type = 'project' AND " + projectScope + ") OR " +
+            "(rv.target_type = 'board' AND " + boardScope + ") OR " +
+            "(rv.target_type = 'mindmap' AND " + mindmapScope + ")" +
+            ") ORDER BY rv.visited_at DESC LIMIT 15";
+
+        List<Map<String, Object>> rows;
+        if (teamId == null) {
+            rows = jdbcTemplate.queryForList(sql, userId, userId, userId, userId);
+        } else {
+            rows = jdbcTemplate.queryForList(sql, userId, userId, teamId, userId, teamId, userId, teamId);
+        }
+        return normalizeRows(rows, "id", "type", "targetId", "name", "visitedAt");
     }
 
     public List<Map<String, Object>> getActivities(Long userId, int offset, int limit) {
-        return jdbcTemplate.queryForList(
+        Long teamId = permissionService.getCurrentTeamId(userId);
+        return getActivities(userId, teamId, offset, limit);
+    }
+
+    public List<Map<String, Object>> getActivities(Long userId, Long teamId, int offset, int limit) {
+        String teamFilter = teamId == null ? "p.team_id IS NULL" : "p.team_id = ?";
+        String boardScope =
+            "al.board_id IS NULL OR EXISTS (SELECT 1 FROM boards b JOIN projects p ON b.project_id = p.id " +
+            "JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = ? " +
+            "WHERE b.id = al.board_id AND (p.archived IS NULL OR p.archived = FALSE) AND " + teamFilter + ")";
+
+        String sql =
             "SELECT al.id, al.user_id as userId, u.display_name as userName, al.action, " +
             "c.title as cardTitle, al.card_id as cardId, al.board_id as boardId, al.created_at as createdAt " +
             "FROM activity_logs al JOIN users u ON al.user_id = u.id " +
             "LEFT JOIN cards c ON al.card_id = c.id " +
-            "WHERE al.user_id = ? OR al.card_id IN (SELECT card_id FROM card_members WHERE user_id = ?) " +
-            "ORDER BY al.created_at DESC LIMIT ? OFFSET ?",
-            userId, userId, limit, offset);
+            "WHERE (al.user_id = ? OR al.card_id IN (SELECT card_id FROM card_members WHERE user_id = ?)) " +
+            "AND (" + boardScope + ") " +
+            "ORDER BY al.created_at DESC LIMIT ? OFFSET ?";
+
+        List<Map<String, Object>> rows;
+        if (teamId == null) {
+            rows = jdbcTemplate.queryForList(sql, userId, userId, userId, limit, offset);
+        } else {
+            rows = jdbcTemplate.queryForList(sql, userId, userId, userId, teamId, limit, offset);
+        }
+        return normalizeRows(rows, "id", "userId", "userName", "action", "cardTitle", "cardId", "boardId", "createdAt");
     }
 
     @Transactional
@@ -129,8 +223,9 @@ public class WorkspaceService {
     }
 
     public List<Map<String, Object>> getBoardColumns(Long boardId) {
-        return jdbcTemplate.queryForList(
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(
             "SELECT id, name, sort_order as sortOrder FROM board_columns WHERE board_id = ? ORDER BY sort_order",
             boardId);
+        return normalizeRows(rows, "id", "name", "sortOrder");
     }
 }

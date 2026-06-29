@@ -106,7 +106,15 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     const board = get().board;
     if (!board) return;
     const cards = board.cards.map((c) =>
-      c.id === cardId ? { ...c, columnId, swimlaneId: swimlaneId ?? c.swimlaneId, sortOrder } : c,
+      c.id === cardId
+        ? {
+            ...c,
+            columnId,
+            swimlaneId: swimlaneId ?? c.swimlaneId,
+            sortOrder,
+            version: (c.version ?? 1) + 1,
+          }
+        : c,
     );
     set({ board: { ...board, cards } });
   },

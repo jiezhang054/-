@@ -4,15 +4,18 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scrum.entity.Board;
 import com.scrum.entity.BoardColumn;
 import com.scrum.entity.Card;
+import com.scrum.entity.Swimlane;
 import com.scrum.mapper.BoardColumnMapper;
 import com.scrum.mapper.BoardMapper;
 import com.scrum.mapper.CardMapper;
+import com.scrum.mapper.SwimlaneMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class BoardChainService {
@@ -22,11 +25,52 @@ public class BoardChainService {
     @Autowired private BoardMapper boardMapper;
     @Autowired private BoardColumnMapper columnMapper;
     @Autowired private CardMapper cardMapper;
+    @Autowired private SwimlaneMapper swimlaneMapper;
+
+    /** 统计看板上实际可展示的卡片（列/泳道有效），与前端渲染规则一致 */
+    public long countPlacedCards(Long boardId) {
+        Board board = boardMapper.selectById(boardId);
+        if (board == null) return 0;
+        List<Card> cards = cardMapper.selectList(
+            new LambdaQueryWrapper<Card>().eq(Card::getBoardId, boardId).eq(Card::getDeleted, false));
+        return filterPlacedCards(board, cards).size();
+    }
+
+    public List<Card> filterPlacedCards(Board board, List<Card> cards) {
+        PlacementContext ctx = buildPlacementContext(board);
+        return cards.stream().filter(c -> isCardPlaced(c, ctx)).collect(Collectors.toList());
+    }
 
     public boolean isBoardCompleted(Long boardId) {
-        long total = cardMapper.selectCount(
-            new LambdaQueryWrapper<Card>().eq(Card::getBoardId, boardId).eq(Card::getDeleted, false));
-        return total > 0;
+        return countPlacedCards(boardId) > 0;
+    }
+
+    private boolean isCardPlaced(Card card, PlacementContext ctx) {
+        if (!ctx.columnIds.contains(card.getColumnId())) return false;
+        if (ctx.swimlaneIds != null) {
+            return card.getSwimlaneId() != null && ctx.swimlaneIds.contains(card.getSwimlaneId());
+        }
+        return true;
+    }
+
+    private PlacementContext buildPlacementContext(Board board) {
+        PlacementContext ctx = new PlacementContext();
+        ctx.columnIds = columnMapper.selectList(
+            new LambdaQueryWrapper<BoardColumn>().eq(BoardColumn::getBoardId, board.getId()))
+            .stream().map(BoardColumn::getId).collect(Collectors.toSet());
+        if (Boolean.TRUE.equals(board.getSwimlanesEnabled())) {
+            List<Swimlane> swimlanes = swimlaneMapper.selectList(
+                new LambdaQueryWrapper<Swimlane>().eq(Swimlane::getBoardId, board.getId()));
+            if (!swimlanes.isEmpty()) {
+                ctx.swimlaneIds = swimlanes.stream().map(Swimlane::getId).collect(Collectors.toSet());
+            }
+        }
+        return ctx;
+    }
+
+    private static final class PlacementContext {
+        Set<Long> columnIds = Set.of();
+        Set<Long> swimlaneIds;
     }
 
     public void ensureCanCreateMilestone(Long roadmapBoardId) {

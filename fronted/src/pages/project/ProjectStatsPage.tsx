@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Typography, Card, Row, Col, Progress, Table, Button, Spin, Empty } from 'antd';
+import { Typography, Card, Row, Col, Table, Button, Spin, Empty } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
 import { projectsApi } from '../../api/global';
+import { SprintBurndownCard } from '../../components/stats/SprintBurndownCard';
 
 const { Title } = Typography;
 
@@ -53,12 +54,13 @@ export function ProjectStatsPage() {
 
         {stats.sprintStats.map((ss) => (
           <Col key={ss.boardId} xs={24} lg={12}>
-            <Card title={`Sprint · ${ss.boardName}`} size="small">
-              <div style={{ marginBottom: 12 }}>
-                计划 {ss.planned} SP · 已完成 {ss.completed} SP
-              </div>
-              <Progress percent={ss.rate} status={ss.rate >= 100 ? 'success' : 'active'} />
-            </Card>
+            <SprintBurndownCard
+              boardId={ss.boardId}
+              boardName={ss.boardName}
+              planned={ss.planned}
+              completed={ss.completed}
+              rate={ss.rate}
+            />
           </Col>
         ))}
 

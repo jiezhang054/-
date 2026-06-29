@@ -1,9 +1,10 @@
 import { Select, Button, Space, Modal, message } from 'antd';
 import { TeamOutlined, PlusOutlined, SettingOutlined } from '@ant-design/icons';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTeamStore } from '../../stores/useTeamStore';
+import { afterTeamSwitch } from '../../utils/teamSwitch';
 import { CreateTeamModal } from './CreateTeamModal';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 
 export function TeamSwitcher({ collapsed }: Props) {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { teams, currentTeamId, switchTeam, currentTeam } = useTeamStore();
   const [createOpen, setCreateOpen] = useState(false);
@@ -20,7 +22,7 @@ export function TeamSwitcher({ collapsed }: Props) {
     const teamId = value === 'personal' ? null : Number(value);
     try {
       await switchTeam(teamId);
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      afterTeamSwitch(queryClient, navigate, location.pathname);
       message.success(teamId ? `已切换到「${teams.find((t) => t.id === teamId)?.name}」` : '已切换到个人空间');
     } catch {
       message.error('切换失败');

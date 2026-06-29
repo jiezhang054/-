@@ -10,26 +10,33 @@ import { ActivityFeed } from '../../components/workspace/ActivityFeed';
 import { workspaceApi, type WorkspaceTask } from '../../api/boards';
 import { WORKSPACE_DISPLAY_LIMITS } from '../../constants/workspace';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useTeamStore } from '../../stores/useTeamStore';
 import '../../styles/workspace.css';
 import type { ActivityItem } from '../../types/board';
 
 export function WorkspacePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const currentTeamId = useTeamStore((s) => s.currentTeamId);
   const isWide = useMediaQuery('(min-width: 1200px)');
   const colSpan = isWide ? 6 : 12;
   const [extraActivities, setExtraActivities] = useState<ActivityItem[]>([]);
   const [hasMoreActivities, setHasMoreActivities] = useState(false);
 
   const { data, refetch, isFetching, isLoading } = useQuery({
-    queryKey: ['workspace'],
+    queryKey: ['workspace', currentTeamId],
     queryFn: workspaceApi.dashboard,
     refetchInterval: 30000,
   });
 
+  const visibleTasks = useMemo(
+    () => (data?.recentTasks ?? []).filter((t) => t.boardId && t.boardName && t.projectId),
+    [data?.recentTasks],
+  );
+
   const boardIds = useMemo(
-    () => [...new Set((data?.recentTasks ?? []).map((t) => t.boardId))],
-    [data?.recentTasks]
+    () => [...new Set(visibleTasks.map((t) => t.boardId))],
+    [visibleTasks]
   );
 
   const { data: columnMap = {} } = useQuery({
@@ -92,6 +99,10 @@ export function WorkspacePage() {
     navigate(`/board/${task.boardId}?card=${task.id}`);
   };
 
+  const handleBoardClick = (task: WorkspaceTask) => {
+    navigate(`/board/${task.boardId}`);
+  };
+
   const activities = [
     ...(data?.activities ?? []).slice(0, WORKSPACE_DISPLAY_LIMITS.activities),
     ...extraActivities,
@@ -109,9 +120,10 @@ export function WorkspacePage() {
         <Row gutter={[16, 16]}>
           <Col span={colSpan}>
             <RecentTasks
-              tasks={data?.recentTasks ?? []}
+              tasks={visibleTasks}
               columnOptions={columnMap}
               onCardClick={handleCardClick}
+              onBoardClick={handleBoardClick}
               onQuickMove={(cardId, columnId) => quickMove.mutate({ cardId, columnId })}
             />
           </Col>

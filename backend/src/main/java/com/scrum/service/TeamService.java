@@ -38,8 +38,14 @@ public class TeamService {
 
     public Map<String, Object> getContext(Long userId) {
         Map<String, Object> ctx = new HashMap<>();
-        ctx.put("teams", listForUser(userId));
-        ctx.put("currentTeamId", permissionService.getCurrentTeamId(userId));
+        List<Map<String, Object>> teams = listForUser(userId);
+        ctx.put("teams", teams);
+        Long currentTeamId = permissionService.getCurrentTeamId(userId);
+        if (currentTeamId == null && !teams.isEmpty()) {
+            currentTeamId = ((Number) teams.get(0).get("id")).longValue();
+            permissionService.setCurrentTeamId(userId, currentTeamId);
+        }
+        ctx.put("currentTeamId", currentTeamId);
         return ctx;
     }
 
